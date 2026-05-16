@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diamond Bett - Master Control Panel</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans antialiased">
+
+    <div class="flex flex-col md:flex-row h-screen w-full overflow-hidden">
+        
+        <div class="w-full md:w-64 bg-slate-900 border-b md:border-b-0 md:border-r border-slate-800 flex flex-col justify-between shrink-0 z-10">
+            <div>
+                <div class="p-4 md:p-6 flex items-center justify-between border-b border-slate-800/50 md:border-b-0">
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-gem text-indigo-500 text-xl md:text-2xl animate-pulse"></i>
+                        <span class="text-base md:text-xl font-bold tracking-wider text-white">DIAMOND CONTROL</span>
+                    </div>
+                    <span class="md:hidden text-xs bg-slate-800 px-2 py-0.5 rounded text-indigo-400 font-mono">Mobile</span>
+                </div>
+                
+                <nav class="flex md:flex-col gap-1 p-2 md:p-4 overflow-x-auto md:overflow-x-visible snap-x no-scrollbar">
+                    <button onclick="switchTab('overview')" id="btn-overview" class="tab-btn shrink-0 snap-center flex items-center gap-2 md:gap-3 px-4 py-2.5 md:py-3 text-xs md:text-sm font-medium rounded-lg bg-indigo-600 text-white transition-all">
+                        <i class="fa-solid fa-chart-pie"></i> <span class="whitespace-nowrap">စာရင်းချုပ်ကြည့်ရန်</span>
+                    </button>
+                    <button onclick="switchTab('users')" id="btn-users" class="tab-btn shrink-0 snap-center flex items-center gap-2 md:gap-3 px-4 py-2.5 md:py-3 text-xs md:text-sm font-medium rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all">
+                        <i class="fa-solid fa-users"></i> <span class="whitespace-nowrap">ကစားသမားများ</span>
+                    </button>
+                    <button onclick="switchTab('finance')" id="btn-finance" class="tab-btn shrink-0 snap-center flex items-center gap-2 md:gap-3 px-4 py-2.5 md:py-3 text-xs md:text-sm font-medium rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all">
+                        <i class="fa-solid fa-wallet"></i> <span class="whitespace-nowrap">ငွေသွင်း/ငွေထုတ် Desk</span>
+                    </button>
+                    <button onclick="switchTab('config')" id="btn-config" class="tab-btn shrink-0 snap-center flex items-center gap-2 md:gap-3 px-4 py-2.5 md:py-3 text-xs md:text-sm font-medium rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all">
+                        <i class="fa-solid fa-sliders"></i> <span class="whitespace-nowrap">ဂိမ်း & ပရိုမို Config</span>
+                    </button>
+                </nav>
+            </div>
+            
+            <div class="hidden md:flex p-4 border-t border-slate-800 items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center font-bold text-white">AD</div>
+                <div>
+                    <p class="text-xs text-slate-400">Logged in as</p>
+                    <p class="text-sm font-semibold text-white">Super Admin</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex-1 flex flex-col min-w-0 overflow-y-auto bg-slate-950">
+            
+            <header class="h-14 md:h-16 border-b border-slate-800/80 flex items-center justify-between px-4 md:px-8 bg-slate-900/40 backdrop-blur shrink-0">
+                <h1 id="page-title" class="text-sm md:text-lg font-bold text-white truncate max-w-[200px] sm:max-w-none">စာရင်းချုပ်ကြည့်ရန် (Overview Analytics)</h1>
+                <button onclick="refreshCurrentTab()" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-[10px] md:text-xs font-semibold rounded border border-slate-700 flex items-center gap-1.5 transition-all text-slate-200">
+                    <i class="fa-solid fa-rotate text-indigo-400"></i> Refresh
+                </button>
+            </header>
+
+            <main class="p-4 md:p-8 flex-1">
+                
+                <div id="tab-overview" class="tab-content space-y-4 md:space-y-6">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                        <div class="p-4 md:p-6 bg-slate-900 border border-slate-800/60 rounded-xl">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-xs md:text-sm font-medium text-slate-400">စုစုပေါင်း ကစားသမား</p>
+                                    <h3 id="stat-players" class="text-xl md:text-3xl font-bold mt-1 text-white">0</h3>
+                                </div>
+                                <div class="p-2.5 bg-indigo-500/10 text-indigo-400 rounded-lg"><i class="fa-solid fa-users text-base md:text-xl"></i></div>
+                            </div>
+                        </div>
+                        <div class="p-4 md:p-6 bg-slate-900 border border-slate-800/60 rounded-xl">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-xs md:text-sm font-medium text-slate-400">စုစုပေါင်း အပ်ငွေ (Approved)</p>
+                                    <h3 id="stat-deposits" class="text-xl md:text-3xl font-bold mt-1 text-emerald-400">0 MMK</h3>
+                                </div>
+                                <div class="p-2.5 bg-emerald-500/10 text-emerald-400 rounded-lg"><i class="fa-solid fa-arrow-down text-base md:text-xl"></i></div>
+                            </div>
+                        </div>
+                        <div class="p-4 md:p-6 bg-slate-900 border border-slate-800/60 rounded-xl">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-xs md:text-sm font-medium text-slate-400">စုစုပေါင်း ထုတ်ငွေ (Approved)</p>
+                                    <h3 id="stat-withdrawals" class="text-xl md:text-3xl font-bold mt-1 text-rose-400">0 MMK</h3>
+                                </div>
+                                <div class="p-2.5 bg-rose-500/10 text-rose-400 rounded-lg"><i class="fa-solid fa-arrow-up text-base md:text-xl"></i></div>
+                            </div>
+                        </div>
+                        <div class="p-4 md:p-6 bg-slate-900 border border-slate-800/60 rounded-xl">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-xs md:text-sm font-medium text-slate-400">စုစုပေါင်း လောင်းကြေး (Volume)</p>
+                                    <h3 id="stat-turnover" class="text-xl md:text-3xl font-bold mt-1 text-amber-400">0 MMK</h3>
+                                </div>
+                                <div class="p-2.5 bg-amber-500/10 text-amber-400 rounded-lg"><i class="fa-solid fa-gamepad text-base md:text-xl"></i></div>
+                            </div>
+                        </div>
+                        <div class="p-4 md:p-6 bg-slate-900 border border-slate-800/60 rounded-xl">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-xs md:text-sm font-medium text-slate-400">ပေးချေခဲ့သည့် ကော်မရှင်စုစုပေါင်း</p>
+                                    <h3 id="stat-commissions" class="text-xl md:text-3xl font-bold mt-1 text-purple-400">0 MMK</h3>
+                                </div>
+                                <div class="p-2.5 bg-purple-500/10 text-purple-400 rounded-lg"><i class="fa-solid fa-percentage text-base md:text-xl"></i></div>
+                            </div>
+                        </div>
+                        <div class="p-4 md:p-6 bg-gradient-to-br from-indigo-900/40 to-slate-900 border border-indigo-500/30 rounded-xl">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-xs md:text-sm font-medium text-indigo-300">ဆိုဒ်၏ အသားတင်အမြတ် (GGR)</p>
+                                    <h3 id="stat-ggr" class="text-xl md:text-3xl font-bold mt-1 text-white">0 MMK</h3>
+                                </div>
+                                <div class="p-2.5 bg-white/10 text-white rounded-lg"><i class="fa-solid fa-money-bill-trend-up text-base md:text-xl"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-users" class="tab-content hidden space-y-4">
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+                        <div class="p-4 md:p-6 border-b border-slate-800 bg-slate-900/50">
+                            <h2 class="text-sm md:text-md font-bold text-white">ကစားသမားများ စာရင်း စီမံခန့်ခွဲခြင်း</h2>
+                        </div>
+                        <div class="overflow-x-auto w-full">
+                            <table class="w-full text-left border-collapse min-w-[700px]">
+                                <thead>
+                                    <tr class="bg-slate-800/40 text-slate-400 text-[11px] md:text-xs font-semibold uppercase tracking-wider border-b border-slate-800">
+                                        <th class="p-4">Username</th>
+                                        <th class="p-4">Fullname</th>
+                                        <th class="p-4">Wallet Balance</th>
+                                        <th class="p-4">Req. Turnover</th>
+                                        <th class="p-4">Ref Code</th>
+                                        <th class="p-4 text-right">လုပ်ဆောင်ချက်</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="users-table-body" class="divide-y divide-slate-800/60 text-xs md:text-sm text-slate-300">
+                                    </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-finance" class="tab-content hidden space-y-6">
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+                        <div class="p-4 md:p-6 border-b border-slate-800 bg-slate-900/50">
+                            <h2 class="text-sm md:text-md font-bold text-amber-400 flex items-center gap-2">
+                                <i class="fa-solid fa-clock-rotate-left"></i> စောင့်ဆိုင်းနေဆဲ တောင်းဆိုမှုများ (Pending Requests)
+                            </h2>
+                        </div>
+                        <div class="overflow-x-auto w-full">
+                            <table class="w-full text-left border-collapse min-w-[750px]">
+                                <thead>
+                                    <tr class="bg-slate-800/40 text-slate-400 text-[11px] md:text-xs font-semibold uppercase tracking-wider border-b border-slate-800">
+                                        <th class="p-4">အချိန်မုဒ်</th>
+                                        <th class="p-4">ကစားသမား</th>
+                                        <th class="p-4">အမျိုးအစား</th>
+                                        <th class="p-4">ပမာဏ</th>
+                                        <th class="p-4">မှတ်ချက်/အကောင့်</th>
+                                        <th class="p-4 text-right">အတည်ပြုချက်</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="finance-table-body" class="divide-y divide-slate-800/60 text-xs md:text-sm text-slate-300">
+                                    </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-config" class="tab-content hidden grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
+                    <div class="p-4 md:p-6 bg-slate-900 border border-slate-800 rounded-xl space-y-4 shadow-xl">
+                        <h2 class="text-sm md:text-md font-bold text-white flex items-center gap-2 border-b border-slate-800 pb-3">
+                            <i class="fa-solid fa-share-nodes text-purple-400"></i> Affiliate System % ဆက်တင်များ
+                        </h2>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-[11px] md:text-xs font-medium text-slate-400 mb-1">Level 1 - တိုက်ရိုက်အေးဂျင့် ရာခိုင်နှုန်း (%)</label>
+                                <input type="number" id="cfg-l1" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm focus:outline-none focus:border-indigo-500 text-white">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] md:text-xs font-medium text-slate-400 mb-1">Level 2 မှ N ဆင့်အထိ ဆင့်ပွားအေးဂျင့် ရာခိုင်နှုန်း (%)</label>
+                                <input type="number" id="cfg-ln" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm focus:outline-none focus:border-indigo-500 text-white">
+                            </div>
+                            <button onclick="saveAffiliateConfig()" class="w-full py-2.5 bg-purple-600 hover:bg-purple-700 text-xs md:text-sm font-semibold rounded-lg text-white transition-all shadow-lg shadow-purple-900/30">
+                                🔒 အေးဂျင့်ရာခိုင်နှုန်းများ သိမ်းဆည်းမည်
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="p-4 md:p-6 bg-slate-900 border border-slate-800 rounded-xl space-y-4 shadow-xl">
+                        <h2 class="text-sm md:text-md font-bold text-white flex items-center gap-2 border-b border-slate-800 pb-3">
+                            <i class="fa-solid fa-circle-dot text-amber-400"></i> Lucky Wheel RTP & Weights
+                        </h2>
+                        <div class="overflow-x-auto w-full">
+                            <table class="w-full text-[11px] md:text-xs text-left border-collapse min-w-[350px]">
+                                <thead>
+                                    <tr class="text-slate-400 border-b border-slate-800">
+                                        <th class="pb-2">အကွက်</th>
+                                        <th class="pb-2">ဆုကြေး</th>
+                                        <th class="pb-2">Turnover</th>
+                                        <th class="pb-2 w-20 text-center">Weight</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="wheel-config-body" class="divide-y divide-slate-800/60">
+                                    </tbody>
+                            </table>
+                        </div>
+                        <button onclick="saveWheelConfig()" class="w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-xs md:text-sm font-semibold rounded-lg text-slate-950 transition-all shadow-lg shadow-amber-900/20">
+                            🔒 ဒိုင်ခွက် အလေးချိန် (RTP) အားလုံးကို သိမ်းဆည်းမည်
+                        </button>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <style>
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+
+    <script>
+        // ====================================================================
+        // ၁။ SUPABASE PROJECT CREDENTIAL INITIALIZATION
+        // ====================================================================
+        const SUPABASE_URL = "https://xjqrwcsxiaybpztzestb.supabase.co"; 
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhqcXJ3Y3N4aWF5YnB6dHplc3RiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzQxMDksImV4cCI6MjA5NDM1MDEwOX0.Kn5sLOTBdNtlooaH-q8ml0cOEswMlgMTSP7GFe7mbxg"; 
+        
+        // Fix: Name conflict resolved by using supabaseClient instead of supabase
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // ====================================================================
+        // ၂။ TAB NAVIGATION CONTROLLER
+        // ====================================================================
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-indigo-600', 'text-white');
+                btn.classList.add('text-slate-400', 'hover:bg-slate-800');
+            });
+            
+            const activeBtn = document.getElementById(`btn-${tabId}`);
+            activeBtn.classList.add('bg-indigo-600', 'text-white');
+            activeBtn.classList.remove('text-slate-400', 'hover:bg-slate-800');
+
+            const titles = {
+                overview: 'စာရင်းချုပ်ကြည့်ရန် (Overview Analytics)',
+                users: 'ကစားသမားများ စီမံခန့်ခွဲခြင်း (User Management)',
+                finance: 'ငွေသွင်း/ငွေထုတ် တောင်းဆိုမှုများ (Finance Desk)',
+                config: 'ဂိမ်းစနစ်နှင့် ကော်မရှင် ပြင်ဆင်မှုများ (System Configuration)'
+            };
+            document.getElementById('page-title').innerText = titles[tabId];
+            
+            refreshCurrentTab();
+        }
+
+        function refreshCurrentTab() {
+            const activeContent = document.querySelector('.tab-content:not(.hidden)').id;
+            if (activeContent === 'tab-overview') fetchOverviewStats();
+            if (activeContent === 'tab-users') fetchUsersList();
+            if (activeContent === 'tab-finance') fetchPendingTransactions();
+            if (activeContent === 'tab-config') fetchConfigurations();
+        }
+
+        window.onload = () => { fetchOverviewStats(); };
+
+        // ====================================================================
+        // ၃။ TAB 1 ENGINE: OVERVIEW STATS
+        // ====================================================================
+        async function fetchOverviewStats() {
+            const { data, error } = await supabaseClient.from('admin_master_analytics').select('*').single();
+            if (error) return console.error(error);
+            
+            document.getElementById('stat-players').innerText = data.total_players.toLocaleString();
+            document.getElementById('stat-deposits').innerText = `${data.total_deposits.toLocaleString()} K`;
+            document.getElementById('stat-withdrawals').innerText = `${data.total_withdrawals.toLocaleString()} K`;
+            document.getElementById('stat-turnover').innerText = `${data.total_turnover.toLocaleString()} K`;
+            document.getElementById('stat-commissions').innerText = `${data.total_commissions_paid.toLocaleString()} K`;
+            
+            const ggrEl = document.getElementById('stat-ggr');
+            ggrEl.innerText = `${data.net_ggr.toLocaleString()} K`;
+            ggrEl.className = data.net_ggr >= 0 ? "text-xl md:text-3xl font-bold mt-1 text-emerald-400" : "text-xl md:text-3xl font-bold mt-1 text-rose-500";
+        }
+
+        // ====================================================================
+        // ၄။ TAB 2 ENGINE: USER LIST & ADJUST BALANCE
+        // ====================================================================
+        async function fetchUsersList() {
+            const { data: users, error } = await supabaseClient.from('users').select('*').eq('is_admin', false).order('created_at', { ascending: false });
+            if (error) return alert(error.message);
+
+            const tbody = document.getElementById('users-table-body');
+            tbody.innerHTML = '';
+            
+            users.forEach(user => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-800/30 transition-all";
+                tr.innerHTML = `
+                    <td class="p-4 font-semibold text-white truncate max-w-[120px]">${user.username}</td>
+                    <td class="p-4 text-slate-400 truncate max-w-[120px]">${user.fullname || '-'}</td>
+                    <td class="p-4 text-emerald-400 font-bold">${parseFloat(user.balance).toLocaleString()} K</td>
+                    <td class="p-4 text-amber-500 font-medium">${parseFloat(user.required_turnover || 0).toLocaleString()} K</td>
+                    <td class="p-4"><span class="bg-indigo-950/80 px-2 py-0.5 rounded border border-indigo-900 text-[11px] text-indigo-300 font-mono">${user.ref_code || '-'}</span></td>
+                    <td class="p-4 text-right">
+                        <button onclick="adjustUserBalance('${user.id}', '${user.username}', ${user.balance})" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-indigo-400 text-xs font-medium transition-all"><i class="fa-solid fa-pen-to-square"></i> ပြင်ရန်</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function adjustUserBalance(userId, username, currentBalance) {
+            const amountStr = prompt(`[${username}] လက်ရှိဘလန် - ${currentBalance} K\nတိုးမည့်ပမာဏ (ဥပမာ- 10000) သို့မဟုတ် နှုတ်မည့်ပမာဏ (ဥပမာ- -5000) ရိုက်ထည့်ပါ-`);
+            if (!amountStr || isNaN(amountStr)) return;
+            const adjustAmount = parseFloat(amountStr);
+            
+            const newBalance = currentBalance + adjustAmount;
+            if (newBalance < 0) return alert("လက်ကျန်ငွေ အနှုတ်ပြခွင့်မရှိပါ!");
+
+            const { error: userErr } = await supabaseClient.from('users').update({ balance: newBalance }).eq('id', userId);
+            if (userErr) return alert(userErr.message);
+
+            await supabaseClient.from('admin_audit_logs').insert([{
+                action_type: 'UPDATE_BALANCE',
+                target_user_id: userId,
+                details: `Admin adjusted balance for ${username}: ${currentBalance} -> ${newBalance} (${adjustAmount >= 0 ? '+' : ''}${adjustAmount})`
+            }]);
+
+            alert("ဝေါလက် ပြင်ဆင်ပြီးပါပြီ။");
+            fetchUsersList();
+        }
+
+        // ====================================================================
+        // ၅။ TAB 3 ENGINE: APPROVE/REJECT TRANSACTIONS
+        // ====================================================================
+        async function fetchPendingTransactions() {
+            const { data: txs, error } = await supabaseClient.from('transactions').select('*, users(username)').eq('status', 'pending').order('created_at', { ascending: true });
+            if (error) return alert(error.message);
+
+            const tbody = document.getElementById('finance-table-body');
+            tbody.innerHTML = '';
+
+            if (txs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-500 font-medium">စောင့်ဆိုင်းနေဆဲ စာရင်း မရှိပါ။</td></tr>`;
+                return;
+            }
+
+            txs.forEach(tx => {
+                const date = new Date(tx.created_at).toLocaleDateString() + ' ' + new Date(tx.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                const typeBadge = tx.type === 'deposit' ? 
+                    `<span class="bg-emerald-950 text-emerald-400 px-2 py-0.5 rounded text-[10px] font-bold border border-emerald-900/60"><i class="fa-solid fa-arrow-down"></i> သွင်း</span>` : 
+                    `<span class="bg-rose-950 text-rose-400 px-2 py-0.5 rounded text-[10px] font-bold border border-rose-900/60"><i class="fa-solid fa-arrow-up"></i> ထုတ်</span>`;
+                
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-800/30 transition-all";
+                tr.innerHTML = `
+                    <td class="p-4 text-[11px] text-slate-500 font-mono">${date}</td>
+                    <td class="p-4 font-semibold text-white">${tx.users?.username || 'Unknown'}</td>
+                    <td class="p-4">${typeBadge}</td>
+                    <td class="p-4 font-bold ${tx.type === 'deposit' ? 'text-emerald-400' : 'text-rose-400'}">${parseFloat(tx.amount).toLocaleString()} K</td>
+                    <td class="p-4 text-slate-400 text-xs truncate max-w-[150px]">${tx.payment_details || '-'}</td>
+                    <td class="p-4 text-right space-x-1.5">
+                        <button onclick="processTransaction('${tx.id}', '${tx.user_id}', '${tx.type}', ${tx.amount}, 'approved')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-[11px] font-bold rounded text-white transition-all">OK</button>
+                        <button onclick="processTransaction('${tx.id}', '${tx.user_id}', '${tx.type}', ${tx.amount}, 'rejected')" class="px-2.5 py-1 bg-slate-800 hover:bg-rose-950 border border-slate-700 hover:border-rose-900 text-[11px] font-bold rounded text-slate-400 hover:text-rose-400 transition-all">Reject</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function processTransaction(txId, userId, type, amount, nextStatus) {
+            if (!confirm(`ဤတောင်းဆိုမှုကို ${nextStatus.toUpperCase()} လုပ်ရန် သေချာပါသလား?`)) return;
+
+            if (nextStatus === 'approved') {
+                const { data: user } = await supabaseClient.from('users').select('balance').eq('id', userId).single();
+                let finalBalance = user.balance;
+
+                if (type === 'deposit') finalBalance += amount;
+                if (type === 'withdrawal') {
+                    finalBalance -= amount;
+                    if(finalBalance < 0) return alert("အသုံးပြုသူတွင် ငွေမလုံလောက်ပါ။");
+                }
+
+                const { error: walletErr } = await supabaseClient.from('users').update({ balance: finalBalance }).eq('id', userId);
+                if (walletErr) return alert(walletErr.message);
+            }
+
+            const { error: txErr } = await supabaseClient.from('transactions').update({ status: nextStatus }).eq('id', txId);
+            if (txErr) return alert(txErr.message);
+
+            alert(`တောင်းဆိုမှု လုပ်ဆောင်ချက် ပြီးမြောက်ပါပြီ။`);
+            fetchPendingTransactions();
+        }
+
+        // ====================================================================
+        // ၆။ TAB 4 ENGINE: SYSTEM CONFIGURATIONS
+        // ====================================================================
+        async function fetchConfigurations() {
+            const { data: affCfg } = await supabaseClient.from('affiliate_config').select('*');
+            if (affCfg) {
+                affCfg.forEach(cfg => {
+                    if (cfg.key === 'level_1_rate') document.getElementById('cfg-l1').value = cfg.value;
+                    if (cfg.key === 'level_n_rate') document.getElementById('cfg-ln').value = cfg.value;
+                });
+            }
+
+            const { data: wheelCfg } = await supabaseClient.from('wheel_config').select('*').order('slot_index', { ascending: true });
+            const tbody = document.getElementById('wheel-config-body');
+            tbody.innerHTML = '';
+            
+            if (wheelCfg) {
+                wheelCfg.forEach(slot => {
+                    const tr = document.createElement('tr');
+                    tr.className = "text-slate-300";
+                    tr.innerHTML = `
+                        <td class="py-2 font-bold text-slate-500 text-center">S-${slot.slot_index}</td>
+                        <td class="py-2"><input type="number" value="${slot.prize_amount}" class="slot-prize bg-slate-800 border border-slate-700 px-1 py-0.5 rounded text-white w-16 text-center text-xs" data-slot="${slot.slot_index}"></td>
+                        <td class="py-2"><input type="number" value="${slot.turnover_multiplier}" class="slot-mult bg-slate-800 border border-slate-700 px-1 py-0.5 rounded text-white w-12 text-center text-xs" data-slot="${slot.slot_index}"></td>
+                        <td class="py-2 text-center"><input type="number" value="${slot.weight}" class="slot-weight bg-slate-800 border border-slate-700 px-1 py-0.5 rounded text-amber-400 w-12 text-center font-bold text-xs" data-slot="${slot.slot_index}"></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+        }
+
+        async function saveAffiliateConfig() {
+            const l1Value = parseFloat(document.getElementById('cfg-l1').value);
+            const lnValue = parseFloat(document.getElementById('cfg-ln').value);
+
+            await supabaseClient.from('affiliate_config').update({ value: l1Value }).eq('key', 'level_1_rate');
+            await supabaseClient.from('affiliate_config').update({ value: lnValue }).eq('key', 'level_n_rate');
+
+            alert("🔒 အေးဂျင့် ကော်မရှင်ရာခိုင်နှုန်း ပြောင်းလဲပြီးပါပြီ။");
+        }
+
+        async function saveWheelConfig() {
+            const rows = document.querySelectorAll('#wheel-config-body tr');
+            for (let tr of rows) {
+                const idx = tr.querySelector('.slot-prize').dataset.slot;
+                const prize = parseFloat(tr.querySelector('.slot-prize').value);
+                const mult = parseInt(tr.querySelector('.slot-mult').value);
+                const weight = parseInt(tr.querySelector('.slot-weight').value);
+
+                await supabaseClient.from('wheel_config').update({
+                    prize_amount: prize,
+                    turnover_multiplier: mult,
+                    weight: weight
+                }).eq('slot_index', idx);
+            }
+            alert("🔒 Lucky Wheel စနစ် ပြင်ဆင်မှုများ သိမ်းဆည်းပြီးပါပြီ။");
+        }
+    </script>
+</body>
+</html>
