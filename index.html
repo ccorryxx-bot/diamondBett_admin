@@ -3,189 +3,171 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Diamond-Bett | Admin Master Dashboard</title>
+    <title>Diamond-Bett | Admin Mobile Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { background-color: #000000; color: #e2e8f0; font-family: 'Inter', sans-serif; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        .active-tab { background-color: #1e293b; color: #ffffff; border-left: 3px solid #6366f1; }
-        .compact-btn { padding: 4px 10px; font-size: 11px; font-weight: 600; border-radius: 4px; transition: all 0.2s; }
-        input, select { background-color: #0f172a; border: 1px solid #1e293b; color: #fff; font-size: 13px; }
+        .active-tab { background-color: #1e293b; color: #ffffff; border-bottom: 2px solid #6366f1; }
+        .compact-btn { padding: 4px 8px; font-size: 11px; font-weight: 600; border-radius: 4px; transition: all 0.2s; white-space: nowrap; }
+        input, select { background-color: #0f172a; border: 1px solid #1e293b; color: #fff; font-size: 12px; }
         table { border-spacing: 0; width: 100%; }
-        th { background-color: #0a0a0a; color: #94a3b8; font-size: 11px; text-transform: uppercase; padding: 12px 16px; text-align: left; }
-        td { padding: 10px 16px; border-bottom: 1px solid #111; font-size: 13px; }
+        th { background-color: #0a0a0a; color: #94a3b8; font-size: 10px; text-transform: uppercase; padding: 10px 12px; text-align: left; }
+        td { padding: 10px 12px; border-bottom: 1px solid #111; font-size: 12px; white-space: nowrap; }
     </style>
 </head>
-<body class="antialiased">
+<body class="antialiased flex flex-col h-screen overflow-hidden">
 
-    <div class="flex h-screen overflow-hidden">
-        <div class="w-56 bg-[#050505] border-r border-gray-900 flex flex-col shrink-0">
-            <div class="p-5 flex items-center gap-2 border-b border-gray-900 mb-4">
-                <i class="fa-solid fa-gem text-indigo-500"></i>
-                <span class="font-bold tracking-tighter text-white">DIAMOND MASTER</span>
-            </div>
-            
-            <nav class="flex-1 space-y-1 px-2">
-                <button onclick="switchTab('overview')" id="btn-overview" class="w-full flex items-center gap-3 px-3 py-2 text-gray-400 hover:bg-gray-900 rounded-md transition-all active-tab">
-                    <i class="fa-solid fa-gauge-high text-sm"></i> <span class="text-xs font-medium">Analytics</span>
-                </button>
-                <button onclick="switchTab('users')" id="btn-users" class="w-full flex items-center gap-3 px-3 py-2 text-gray-400 hover:bg-gray-990 rounded-md transition-all">
-                    <i class="fa-solid fa-users text-sm"></i> <span class="text-xs font-medium">Players List</span>
-                </button>
-                <button onclick="switchTab('finance')" id="btn-finance" class="w-full flex items-center gap-3 px-3 py-2 text-gray-400 hover:bg-gray-900 rounded-md transition-all">
-                    <i class="fa-solid fa-money-bill-transfer text-sm"></i> <span class="text-xs font-medium">Finance Desk</span>
-                </button>
-                <button onclick="switchTab('settings')" id="btn-settings" class="w-full flex items-center gap-3 px-3 py-2 text-gray-400 hover:bg-gray-900 rounded-md transition-all">
-                    <i class="fa-solid fa-gears text-sm"></i> <span class="text-xs font-medium">Site Config</span>
-                </button>
-            </nav>
+    <header class="h-12 border-b border-gray-900 flex items-center justify-between px-4 bg-[#050505]/90 backdrop-blur shrink-0">
+        <div class="flex items-center gap-1.5">
+            <i class="fa-solid fa-gem text-indigo-500 text-xs"></i>
+            <span class="font-bold tracking-tighter text-white text-xs">DIAMOND CONTROL</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <button onclick="refreshData()" class="compact-btn bg-gray-900 hover:bg-gray-800 text-gray-400 border border-gray-800">
+                <i class="fa-solid fa-rotate"></i> Sync
+            </button>
+        </div>
+    </header>
 
-            <div class="p-4 border-t border-gray-900 text-[10px] text-gray-600">
-                Logged in as <span class="text-indigo-400">SuperAdmin</span>
+    <nav class="flex overflow-x-auto bg-[#030303] border-b border-gray-900 no-scrollbar shrink-0">
+        <button onclick="switchTab('overview')" id="btn-overview" class="flex-1 min-w-[90px] py-2.5 text-center text-[11px] font-medium text-gray-400 active-tab transition-all">
+            <i class="fa-solid fa-chart-simple block mb-0.5 text-center"></i> Analytics
+        </button>
+        <button onclick="switchTab('users')" id="btn-users" class="flex-1 min-w-[90px] py-2.5 text-center text-[11px] font-medium text-gray-400 transition-all">
+            <i class="fa-solid fa-users block mb-0.5 text-center"></i> Players
+        </button>
+        <button onclick="switchTab('finance')" id="btn-finance" class="flex-1 min-w-[90px] py-2.5 text-center text-[11px] font-medium text-gray-400 transition-all">
+            <i class="fa-solid fa-money-bill-transfer block mb-0.5 text-center"></i> Finance
+        </button>
+        <button onclick="switchTab('settings')" id="btn-settings" class="flex-1 min-w-[90px] py-2.5 text-center text-[11px] font-medium text-gray-400 transition-all">
+            <i class="fa-solid fa-gears block mb-0.5 text-center"></i> Config
+        </button>
+    </nav>
+
+    <main class="flex-1 overflow-y-auto p-4 no-scrollbar bg-black">
+        
+        <div id="tab-overview" class="tab-content space-y-4">
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-[#080808] p-3 rounded-lg border border-gray-900">
+                    <p class="text-[9px] text-gray-500 mb-0.5 uppercase tracking-wider">Total Players</p>
+                    <h3 id="stat-total-users" class="text-lg font-bold text-white">0</h3>
+                </div>
+                <div class="bg-[#080808] p-3 rounded-lg border border-gray-900">
+                    <p class="text-[9px] text-gray-500 mb-0.5 uppercase tracking-wider">Today Deposits</p>
+                    <h3 id="stat-total-deposit" class="text-lg font-bold text-emerald-500">0 K</h3>
+                </div>
+                <div class="bg-[#080808] p-3 rounded-lg border border-gray-900">
+                    <p class="text-[9px] text-gray-500 mb-0.5 uppercase tracking-wider">Today Withdraw</p>
+                    <h3 id="stat-total-withdraw" class="text-lg font-bold text-rose-500">0 K</h3>
+                </div>
+                <div class="bg-[#080808] p-3 rounded-lg border border-gray-900">
+                    <p class="text-[9px] text-gray-500 mb-0.5 uppercase tracking-wider">Net Profit (GGR)</p>
+                    <h3 id="stat-ggr" class="text-lg font-bold text-indigo-400">0 K</h3>
+                </div>
             </div>
         </div>
 
-        <div class="flex-1 flex flex-col min-w-0 bg-black relative">
-            
-            <header class="h-12 border-b border-gray-900 flex items-center justify-between px-6 bg-[#050505]/80 backdrop-blur">
-                <h2 id="page-title" class="text-sm font-semibold text-gray-200 uppercase tracking-widest">Analytics Dashboard</h2>
-                <div class="flex items-center gap-4">
-                    <button onclick="refreshData()" class="compact-btn bg-gray-900 hover:bg-gray-800 text-gray-400 border border-gray-800">
-                        <i class="fa-solid fa-rotate"></i> Sync
-                    </button>
-                </div>
-            </header>
-
-            <main class="flex-1 overflow-y-auto p-6 no-scrollbar">
-                
-                <div id="tab-overview" class="tab-content space-y-6">
-                    <div class="grid grid-cols-4 gap-4">
-                        <div class="bg-[#080808] p-4 rounded-lg border border-gray-900">
-                            <p class="text-[10px] text-gray-500 mb-1 uppercase">Total Players</p>
-                            <h3 id="stat-total-users" class="text-xl font-bold text-white">0</h3>
-                        </div>
-                        <div class="bg-[#080808] p-4 rounded-lg border border-gray-900">
-                            <p class="text-[10px] text-gray-500 mb-1 uppercase">Today Deposits</p>
-                            <h3 id="stat-total-deposit" class="text-xl font-bold text-emerald-500">0 K</h3>
-                        </div>
-                        <div class="bg-[#080808] p-4 rounded-lg border border-gray-900">
-                            <p class="text-[10px] text-gray-500 mb-1 uppercase">Today Withdraw</p>
-                            <h3 id="stat-total-withdraw" class="text-xl font-bold text-rose-500">0 K</h3>
-                        </div>
-                        <div class="bg-[#080808] p-4 rounded-lg border border-gray-900">
-                            <p class="text-[10px] text-gray-500 mb-1 uppercase">Net Profit (GGR)</p>
-                            <h3 id="stat-ggr" class="text-xl font-bold text-indigo-400">0 K</h3>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="tab-users" class="tab-content hidden">
-                    <div class="bg-[#080808] border border-gray-900 rounded-lg overflow-hidden">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Username</th>
-                                    <th>Wallet Balance</th>
-                                    <th>Remaining Turnover</th>
-                                    <th>Ref Code</th>
-                                    <th class="text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="user-table-body"></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div id="tab-finance" class="tab-content hidden">
-                    <div class="bg-[#080808] border border-gray-900 rounded-lg overflow-hidden">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Time</th>
-                                    <th>User</th>
-                                    <th>Type</th>
-                                    <th>Amount</th>
-                                    <th>Details</th>
-                                    <th class="text-right">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="finance-table-body"></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div id="tab-settings" class="tab-content hidden grid grid-cols-2 gap-6">
-                    <div class="bg-[#080808] p-5 rounded-lg border border-gray-900 space-y-4">
-                        <h4 class="text-xs font-bold text-indigo-400 uppercase border-b border-gray-900 pb-2">Bonus & Turnover Control</h4>
-                        
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="text-[10px] text-gray-500 block mb-1">Welcome Bonus Status</label>
-                                <select id="set-welcome-toggle" class="w-full px-2 py-1.5 rounded outline-none">
-                                    <option value="true">ON (ဖွင့်မည်)</option>
-                                    <option value="false">OFF (ပိတ်မည်)</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="text-[10px] text-gray-500 block mb-1">Welcome Bonus Amount (K)</label>
-                                <input type="number" id="set-welcome-amt" class="w-full px-2 py-1.5 rounded outline-none">
-                            </div>
-
-                            <div>
-                                <label class="text-[10px] text-gray-500 block mb-1">Deposit Bonus Rate (%)</label>
-                                <input type="number" id="set-bonus-rate" class="w-full px-2 py-1.5 rounded outline-none">
-                            </div>
-                            <div>
-                                <label class="text-[10px] text-gray-500 block mb-1">Turnover Multiplier (X)</label>
-                                <input type="number" id="set-turnover-x" class="w-full px-2 py-1.5 rounded outline-none">
-                            </div>
-
-                            <div>
-                                <label class="text-[10px] text-gray-500 block mb-1">Min Withdrawal (K)</label>
-                                <input type="number" id="set-min-wd" class="w-full px-2 py-1.5 rounded outline-none">
-                            </div>
-                            <div>
-                                <label class="text-[10px] text-gray-500 block mb-1">Max Withdrawal (K)</label>
-                                <input type="number" id="set-max-wd" class="w-full px-2 py-1.5 rounded outline-none">
-                            </div>
-                        </div>
-                        
-                        <div class="pt-2">
-                            <button onclick="saveSiteSettings()" class="compact-btn bg-indigo-600 hover:bg-indigo-500 text-white w-full">Update Master Configuration</button>
-                        </div>
-                    </div>
-
-                    <div class="bg-[#080808] p-5 rounded-lg border border-gray-900 space-y-4">
-                        <h4 class="text-xs font-bold text-emerald-400 uppercase border-b border-gray-900 pb-2">Payment Methods (ဒိုင်ဖုန်းနံပါတ်များ)</h4>
-                        <div id="payment-list" class="space-y-2"></div>
-                        <div class="pt-2 border-t border-gray-900">
-                            <p class="text-[9px] text-gray-600 mb-2 italic">* ဒိုင်ဖုန်းနံပါတ်များကို ဤနေရာတွင် တိုက်ရိုက်လဲလှယ်နိုင်ပါသည်</p>
-                        </div>
-                    </div>
-                </div>
-
-            </main>
+        <div id="tab-users" class="tab-content hidden">
+            <div class="bg-[#080808] border border-gray-900 rounded-lg overflow-x-auto no-scrollbar">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Player (Phone/Name)</th>
+                            <th>Balance</th>
+                            <th>Turnover Left</th>
+                            <th class="text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="user-table-body"></tbody>
+                </table>
+            </div>
         </div>
-    </div>
+
+        <div id="tab-finance" class="tab-content hidden">
+            <div class="bg-[#080808] border border-gray-900 rounded-lg overflow-x-auto no-scrollbar">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Time/User</th>
+                            <th>Type</th>
+                            <th>Amount</th>
+                            <th>Details</th>
+                            <th class="text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="finance-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="tab-settings" class="tab-content hidden space-y-4">
+            <div class="bg-[#080808] p-4 rounded-lg border border-gray-900 space-y-3">
+                <h4 class="text-[11px] font-bold text-indigo-400 uppercase border-b border-gray-900 pb-1.5"><i class="fa-solid fa-sliders mr-1"></i> System Setup</h4>
+                <div class="space-y-2.5">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-[9px] text-gray-500 block mb-1">Welcome Bonus</label>
+                            <select id="set-welcome-toggle" class="w-full px-2 py-1.5 rounded outline-none">
+                                <option value="true">ON (ဖွင့်)</option>
+                                <option value="false">OFF (ပိတ်)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[9px] text-gray-500 block mb-1">Welcome Amt (K)</label>
+                            <input type="number" id="set-welcome-amt" class="w-full px-2 py-1.5 rounded outline-none">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-[9px] text-gray-500 block mb-1">Dep Bonus (%)</label>
+                            <input type="number" id="set-bonus-rate" class="w-full px-2 py-1.5 rounded outline-none">
+                        </div>
+                        <div>
+                            <label class="text-[9px] text-gray-500 block mb-1">Turnover (X)</label>
+                            <input type="number" id="set-turnover-x" class="w-full px-2 py-1.5 rounded outline-none">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-[9px] text-gray-500 block mb-1">Min Withdraw (K)</label>
+                            <input type="number" id="set-min-wd" class="w-full px-2 py-1.5 rounded outline-none">
+                        </div>
+                        <div>
+                            <label class="text-[9px] text-gray-500 block mb-1">Max Withdraw (K)</label>
+                            <input type="number" id="set-max-wd" class="w-full px-2 py-1.5 rounded outline-none">
+                        </div>
+                    </div>
+                </div>
+                <div class="pt-1">
+                    <button onclick="saveSiteSettings()" class="compact-btn bg-indigo-600 hover:bg-indigo-500 text-white w-full py-1.5">Save Configurations</button>
+                </div>
+            </div>
+
+            <div class="bg-[#080808] p-4 rounded-lg border border-gray-900 space-y-3">
+                <h4 class="text-[11px] font-bold text-emerald-400 uppercase border-b border-gray-900 pb-1.5"><i class="fa-solid fa-wallet mr-1"></i> Active Gateways</h4>
+                <div id="payment-list" class="space-y-2"></div>
+            </div>
+        </div>
+
+    </main>
 
     <script>
-        // Supabase Initialization
+        // Supabase Configurations (Hardcoded Lowercase URL & Anon Key)
         const SUPABASE_URL = "https://xjqrwcsxiaybpztzestb.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhqcXJ3Y3N4aWF5YnB6dHplc3RiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzQxMDksImV4cCI6MjA5NDM1MDEwOX0.Kn5sLOTBdNtlooaH-q8ml0cOEswMlgMTSP7GFe7mbxg"; 
+        
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // Tab Switcher
+        // Core App Tab switcher
         function switchTab(tab) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             document.getElementById(`tab-${tab}`).classList.remove('hidden');
             
             document.querySelectorAll('nav button').forEach(btn => btn.classList.remove('active-tab'));
             document.getElementById(`btn-${tab}`).classList.add('active-tab');
-
-            const titles = { overview: 'Analytics Dashboard', users: 'User Management', finance: 'Finance Requests', settings: 'System Configuration' };
-            document.getElementById('page-title').innerText = titles[tab];
             refreshData();
         }
 
@@ -197,7 +179,7 @@
             if (activeTab === 'tab-settings') loadSettings();
         }
 
-        // 1. Load Statistics
+        // 1. Dashboard View Stats
         async function loadStats() {
             const { count: userCount } = await supabase.from('users').select('*', { count: 'exact', head: true });
             const { data: txs } = await supabase.from('transactions').select('amount, type, status').eq('status', 'approved');
@@ -214,67 +196,69 @@
             document.getElementById('stat-ggr').innerText = (dep - wit).toLocaleString() + ' K';
         }
 
-        // 2. Load Players List
+        // 2. Load Players Module (Handles fallback data formatting safely)
         async function loadUsers() {
             const { data: users } = await supabase.from('users').select('*').order('created_at', { ascending: false });
             const tbody = document.getElementById('user-table-body');
             tbody.innerHTML = '';
             users?.forEach(u => {
+                const displayName = u.fullname || u.phone || u.username || 'User';
+                const bal = u.balance ? parseFloat(u.balance) : 0;
+                const to = u.remaining_turnover ? parseFloat(u.remaining_turnover) : 0;
                 tbody.innerHTML += `
                     <tr>
-                        <td class="text-white font-medium">${u.username}</td>
-                        <td class="text-emerald-400 font-bold">${parseFloat(u.balance).toLocaleString()} K</td>
-                        <td class="text-rose-400 font-bold">${parseFloat(u.remaining_turnover || 0).toLocaleString()} K</td>
-                        <td><span class="bg-gray-900 px-2 py-0.5 rounded text-[10px] text-gray-400">${u.ref_code || '-'}</span></td>
+                        <td class="text-white font-medium text-[12px] max-w-[120px] truncate">${displayName}</td>
+                        <td class="text-emerald-400 font-bold">${bal.toLocaleString()} K</td>
+                        <td class="text-rose-400 font-bold">${to.toLocaleString()} K</td>
                         <td class="text-right">
-                            <button onclick="adjustBalance('${u.id}', '${u.username}')" class="compact-btn bg-gray-900 border border-gray-800 text-gray-300 hover:bg-gray-800">Edit Balance</button>
+                            <button onclick="adjustBalance('${u.id}', '${displayName}')" class="compact-btn bg-gray-900 border border-gray-800 text-gray-300">Edit</button>
                         </td>
                     </tr>
                 `;
             });
         }
 
-        // 3. Finance Approval & Rejection Logic
+        // 3. Finance Desk Operations (Automated math triggers)
         async function loadFinance() {
-            const { data: txs } = await supabase.from('transactions').select('*, users(username)').eq('status', 'pending').order('created_at', { ascending: true });
+            const { data: txs } = await supabase.from('transactions').select('*, users(username, fullname, phone)').eq('status', 'pending').order('created_at', { ascending: true });
             const tbody = document.getElementById('finance-table-body');
             tbody.innerHTML = '';
             
             txs?.forEach(t => {
                 const date = new Date(t.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                const name = t.users ? (t.users.fullname || t.users.phone || t.users.username) : 'Unknown';
                 const typeColor = t.type === 'deposit' ? 'text-emerald-500' : 'text-rose-500';
                 tbody.innerHTML += `
                     <tr>
-                        <td class="text-gray-500 text-[11px] font-mono">${date}</td>
-                        <td class="text-gray-200">${t.users?.username || 'Unknown'}</td>
+                        <td>
+                            <div class="text-[11px] text-white font-medium max-w-[100px] truncate">${name}</div>
+                            <div class="text-[9px] text-gray-600 font-mono">${date}</div>
+                        </td>
                         <td class="${typeColor} font-bold text-[10px] uppercase">${t.type}</td>
                         <td class="font-bold text-white">${parseFloat(t.amount).toLocaleString()} K</td>
-                        <td class="text-gray-500 text-[11px] truncate max-w-[150px]">${t.payment_details}</td>
+                        <td class="text-gray-500 text-[10px] max-w-[110px] truncate">${t.payment_details}</td>
                         <td class="text-right space-x-1">
-                            <button onclick="processTx('${t.id}', '${t.user_id}', '${t.type}', ${t.amount}, 'approved')" class="compact-btn bg-indigo-600 text-white hover:bg-indigo-500">Approve</button>
-                            <button onclick="processTx('${t.id}', '${t.user_id}', '${t.type}', ${t.amount}, 'rejected')" class="compact-btn bg-gray-900 text-rose-500 border border-rose-900/30 hover:bg-gray-900/60">Reject</button>
+                            <button onclick="processTx('${t.id}', '${t.user_id}', '${t.type}', ${t.amount}, 'approved')" class="compact-btn bg-indigo-600 text-white">Approve</button>
+                            <button onclick="processTx('${t.id}', '${t.user_id}', '${t.type}', ${t.amount}, 'rejected')" class="compact-btn bg-gray-900 text-rose-500 border border-rose-900/40">X</button>
                         </td>
                     </tr>
                 `;
             });
         }
 
-        // Auto Calculations on Approval
         async function processTx(id, uid, type, amount, status) {
             try {
                 if (status === 'approved') {
                     const { data: sets } = await supabase.from('site_settings').select('*').eq('id', 1).single();
                     const { data: user } = await supabase.from('users').select('balance, remaining_turnover').eq('id', uid).single();
 
-                    let newBal = parseFloat(user.balance);
+                    let newBal = parseFloat(user.balance || 0);
                     let newTO = parseFloat(user.remaining_turnover || 0);
 
                     if (type === 'deposit') {
-                        // Formula: Deposit + (Deposit * BonusRate / 100)
-                        const bonus = amount * (parseFloat(sets.deposit_bonus_rate) / 100);
+                        const bonus = amount * (parseFloat(sets.deposit_bonus_rate || 0) / 100);
                         newBal += (amount + bonus);
-                        // Formula: Deposit * TurnoverMultiplier
-                        newTO += (amount * parseFloat(sets.turnover_multiplier));
+                        newTO += (amount * parseFloat(sets.turnover_multiplier || 0));
                     } else if (type === 'withdrawal') {
                         newBal -= amount;
                     }
@@ -283,19 +267,18 @@
                 }
 
                 await supabase.from('transactions').update({ status }).eq('id', id);
-                alert(`Transaction status marked as ${status}!`);
+                alert(`Action Successful!`);
                 refreshData();
             } catch (err) {
                 console.error(err);
-                alert("Operation failed due to database sync issues.");
+                alert("Database operation failed.");
             }
         }
 
-        // 4. Load Configuration Inputs (Welcome Bonus Included)
+        // 4. Config Controller & Payment Number Management
         async function loadSettings() {
             const { data: sets } = await supabase.from('site_settings').select('*').eq('id', 1).single();
             
-            // Map Database values to UI Input fields
             document.getElementById('set-welcome-toggle').value = sets.welcome_bonus_enabled.toString();
             document.getElementById('set-welcome-amt').value = sets.welcome_bonus_amount;
             document.getElementById('set-bonus-rate').value = sets.deposit_bonus_rate;
@@ -303,7 +286,6 @@
             document.getElementById('set-min-wd').value = sets.min_withdrawal;
             document.getElementById('set-max-wd').value = sets.max_withdrawal;
 
-            // Load Payment accounts
             const { data: methods } = await supabase.from('payment_methods').select('*').order('id', { ascending: true });
             const list = document.getElementById('payment-list');
             list.innerHTML = '';
@@ -311,25 +293,24 @@
                 list.innerHTML += `
                     <div class="flex gap-2 items-center bg-black p-2 rounded border border-gray-900">
                         <span class="text-[10px] w-12 text-gray-400 font-bold uppercase">${m.provider_name}</span>
-                        <input type="text" value="${m.account_number}" class="text-[11px] flex-1 p-1 rounded" id="pm-num-${m.id}">
-                        <button onclick="updatePM(${m.id})" class="compact-btn bg-emerald-950/40 text-emerald-400 border border-emerald-900/40 hover:bg-emerald-900/30">Save</button>
+                        <input type="text" value="${m.account_number}" class="text-[11px] flex-1 p-1 rounded px-2" id="pm-num-${m.id}">
+                        <button onclick="updatePM(${m.id})" class="compact-btn bg-emerald-950/50 text-emerald-400 border border-emerald-900/50">Save</button>
                     </div>
                 `;
             });
         }
 
-        // Save Master Configurations
         async function saveSiteSettings() {
             const up = {
                 welcome_bonus_enabled: document.getElementById('set-welcome-toggle').value === 'true',
-                welcome_bonus_amount: parseFloat(document.getElementById('set-welcome-amt').value),
-                deposit_bonus_rate: parseFloat(document.getElementById('set-bonus-rate').value),
-                turnover_multiplier: parseFloat(document.getElementById('set-turnover-x').value),
-                min_withdrawal: parseFloat(document.getElementById('set-min-wd').value),
-                max_withdrawal: parseFloat(document.getElementById('set-max-wd').value)
+                welcome_bonus_amount: parseFloat(document.getElementById('set-welcome-amt').value || 0),
+                deposit_bonus_rate: parseFloat(document.getElementById('set-bonus-rate').value || 0),
+                turnover_multiplier: parseFloat(document.getElementById('set-turnover-x').value || 0),
+                min_withdrawal: parseFloat(document.getElementById('set-min-wd').value || 0),
+                max_withdrawal: parseFloat(document.getElementById('set-max-wd').value || 0)
             };
             await supabase.from('site_settings').update(up).eq('id', 1);
-            alert("Master Settings Synchronized!");
+            alert("Configurations Saved!");
         }
 
         async function updatePM(id) {
@@ -338,12 +319,11 @@
             alert("Provider gateway number updated!");
         }
 
-        // Back-office Manual Adjustments
         async function adjustBalance(uid, name) {
-            const amt = prompt(`Adjust balance for ${name} (e.g. 10000 or -10000):`);
+            const amt = prompt(`Adjust balance for ${name} (Use +/-):`);
             if (!amt || isNaN(amt)) return;
             const { data } = await supabase.from('users').select('balance').eq('id', uid).single();
-            await supabase.from('users').update({ balance: parseFloat(data.balance) + parseFloat(amt) }).eq('id', uid);
+            await supabase.from('users').update({ balance: parseFloat(data.balance || 0) + parseFloat(amt) }).eq('id', uid);
             refreshData();
         }
 
