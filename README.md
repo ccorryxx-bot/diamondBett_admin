@@ -1,1 +1,1 @@
-# diamondBett_admin
+# diamondBett_admin panel
