@@ -1,3 +1,4 @@
+// ===== TOAST =====
 function showToast(msg, type = 'success') {
     const t = document.getElementById('toast');
     t.textContent = msg;
@@ -5,6 +6,7 @@ function showToast(msg, type = 'success') {
     setTimeout(() => { t.className = ''; }, 2800);
 }
 
+// ===== TAB SWITCH =====
 function switchTab(tab) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
     const target = document.getElementById(`tab-${tab}`);
@@ -51,7 +53,6 @@ async function loadSidebarData() {
             db.from('transactions').select('*', { count: 'exact', head: true }).eq('status', 'pending')
         ]);
 
-        // Role breakdown
         const roles = { admin: 0, agent: 0, player: 0 };
         allUsers?.forEach(u => {
             if (u.is_admin) roles.admin++;
@@ -61,8 +62,8 @@ async function loadSidebarData() {
 
         const roleColors = {
             admin: { bg: 'bg-purple-50', text: 'text-purple-600', icon: 'fa-shield-halved', label: 'Admin' },
-            agent: { bg: 'bg-blue-50', text: 'text-blue-600', icon: 'fa-user-tie', label: 'Agent' },
-            player: { bg: 'bg-slate-50', text: 'text-slate-600', icon: 'fa-gamepad', label: 'ကစားသမား' }
+            agent: { bg: 'bg-blue-50',   text: 'text-blue-600',   icon: 'fa-user-tie',      label: 'Agent' },
+            player:{ bg: 'bg-slate-50',  text: 'text-slate-600',  icon: 'fa-gamepad',        label: 'ကစားသမား' }
         };
 
         document.getElementById('sidebar-roles').innerHTML = Object.entries(roles).map(([role, count]) => {
@@ -76,7 +77,6 @@ async function loadSidebarData() {
             </div>`;
         }).join('');
 
-        // Live stats
         document.getElementById('sidebar-stats').innerHTML = `
         <div class="flex items-center justify-between bg-amber-50 rounded-lg px-3 py-2">
             <span class="text-[11px] text-amber-700"><i class="fa-solid fa-clock-rotate-left mr-1"></i> ဆိုင်းငံ့တောင်းဆိုမှု</span>
@@ -87,12 +87,11 @@ async function loadSidebarData() {
             <span class="text-[13px] font-bold text-emerald-600">${allUsers?.length || 0}</span>
         </div>`;
 
-        // Recent activity
         document.getElementById('sidebar-activity').innerHTML = recentTxs?.map(t => {
             const name = t.users ? (t.users.fullname || t.users.phone) : 'Unknown';
-            const dt = new Date(t.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            const col = t.status === 'approved' ? 'text-emerald-600' :
-                        t.status === 'rejected' ? 'text-rose-600' : 'text-amber-600';
+            const dt   = new Date(t.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const col  = t.status === 'approved' ? 'text-emerald-600' :
+                         t.status === 'rejected'  ? 'text-rose-600'   : 'text-amber-600';
             const typeLabel = t.type === 'deposit' ? 'ငွေသွင်း' : 'ငွေထုတ်';
             return `<div class="flex items-center justify-between py-1.5 border-b border-slate-50 last:border-0">
                 <div>
@@ -103,9 +102,97 @@ async function loadSidebarData() {
             </div>`;
         }).join('') || '<p class="text-[11px] text-slate-400">မှတ်တမ်း မရှိသေးပါ</p>';
 
-    } catch (e) {
-        console.error('Sidebar error:', e);
+    } catch (e) { console.error('Sidebar error:', e); }
+}
+
+// ===== NOTIFICATION SOUND (Web Audio API) =====
+let _audioCtx = null;
+function getAudioCtx() {
+    if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    return _audioCtx;
+}
+
+function playNotificationSound(type) {
+    try {
+        const ctx  = getAudioCtx();
+        const gain = ctx.createGain();
+        gain.connect(ctx.destination);
+
+        // deposit → rising two-tone chime (ငွေသွင်း → ဝမ်းသာဖွယ် သံ)
+        // withdrawal → descending alert tone (ငွေထုတ် → သတိပေး သံ)
+        const notes = type === 'deposit'
+            ? [{ freq: 880, t: 0 }, { freq: 1100, t: 0.12 }, { freq: 1320, t: 0.24 }]
+            : [{ freq: 660, t: 0 }, { freq: 550, t: 0.14 }, { freq: 440, t: 0.28 }];
+
+        notes.forEach(({ freq, t }) => {
+            const osc = ctx.createOscillator();
+            const g   = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.value = freq;
+            osc.connect(g);
+            g.connect(ctx.destination);
+            const now = ctx.currentTime + t;
+            g.gain.setValueAtTime(0, now);
+            g.gain.linearRampToValueAtTime(0.35, now + 0.02);
+            g.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+            osc.start(now);
+            osc.stop(now + 0.3);
+        });
+    } catch(e) { console.warn('Sound error:', e); }
+}
+
+// ===== PENDING NOTIFICATION POLLING =====
+let _lastPendingCount = null;
+let _pollTimer = null;
+
+async function pollPendingRequests() {
+    try {
+        const { count } = await db.from('transactions')
+            .select('*', { count: 'exact', head: true })
+            .eq('status', 'pending');
+
+        const c = count || 0;
+        updateFinanceBadge(c);
+
+        if (_lastPendingCount !== null && c > _lastPendingCount) {
+            const diff = c - _lastPendingCount;
+            // Determine type of latest pending tx for sound choice
+            const { data: latest } = await db.from('transactions')
+                .select('type').eq('status','pending').order('created_at',{ascending:false}).limit(1).single();
+            const txType = latest?.type || 'deposit';
+            playNotificationSound(txType);
+            showToast(
+                `⚡ တောင်းဆိုမှု ${diff} ခု အသစ်ရောက်သည်! (${txType === 'deposit' ? 'ငွေသွင်း' : 'ငွေထုတ်'})`,
+                'success'
+            );
+        }
+        _lastPendingCount = c;
+    } catch(e) { console.warn('Poll error:', e); }
+}
+
+function updateFinanceBadge(count) {
+    const btn = document.getElementById('btn-finance');
+    if (!btn) return;
+    // Remove old badge
+    const old = btn.querySelector('.notif-badge');
+    if (old) old.remove();
+    if (count > 0) {
+        btn.insertAdjacentHTML('beforeend',
+            `<span class="notif-badge">${count > 9 ? '9+' : count}</span>`);
     }
 }
 
-window.onload = () => loadStats();
+function startPolling() {
+    pollPendingRequests();                   // immediate first check
+    _pollTimer = setInterval(pollPendingRequests, 30000); // every 30 sec
+}
+
+// ===== INIT =====
+window.onload = () => {
+    loadStats();
+    // Unlock AudioContext on first user interaction
+    document.addEventListener('click', () => {
+        if (_audioCtx && _audioCtx.state === 'suspended') _audioCtx.resume();
+    }, { once: true });
+    startPolling();
+};
