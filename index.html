@@ -3,35 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Diamond-Bett | Admin Mobile Dashboard</title>
+    <title>Diamond-Bett | Admin</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        body { background-color: #000000; color: #e2e8f0; font-family: 'Inter', sans-serif; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .active-tab { background-color: #1e293b; color: #ffffff; border-bottom: 2px solid #6366f1; }
-        .compact-btn { padding: 6px 10px; font-size: 11px; font-weight: 600; border-radius: 4px; transition: all 0.2s; white-space: nowrap; }
-        input, select { background-color: #0f172a; border: 1px solid #1e293b; color: #fff; font-size: 12px; }
-        table { border-spacing: 0; width: 100%; }
-        th { background-color: #0a0a0a; color: #94a3b8; font-size: 10px; text-transform: uppercase; padding: 10px 12px; text-align: left; }
-        td { padding: 10px 12px; border-bottom: 1px solid #111; font-size: 12px; white-space: nowrap; }
-    </style>
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 <body class="antialiased flex flex-col h-screen overflow-hidden">
 
+    <!-- Toast -->
+    <div id="toast"></div>
+
+    <!-- Modal -->
+    <div id="modal-overlay" class="hidden"></div>
+
+    <!-- Header -->
     <header class="h-12 border-b border-gray-900 flex items-center justify-between px-4 bg-[#050505]/90 backdrop-blur shrink-0">
         <div class="flex items-center gap-1.5">
             <i class="fa-solid fa-gem text-indigo-500 text-xs"></i>
             <span class="font-bold tracking-tighter text-white text-xs">DIAMOND CONTROL</span>
         </div>
-        <div class="flex items-center gap-2">
-            <button onclick="refreshData()" class="compact-btn bg-gray-900 hover:bg-gray-800 text-gray-400 border border-gray-800">
-                <i class="fa-solid fa-rotate"></i> Sync
-            </button>
-        </div>
+        <button onclick="refreshData()" class="compact-btn bg-gray-900 hover:bg-gray-800 text-gray-400 border border-gray-800">
+            <i class="fa-solid fa-rotate"></i> Sync
+        </button>
     </header>
 
+    <!-- Nav -->
     <nav class="flex bg-[#030303] border-b border-gray-900 no-scrollbar shrink-0">
         <button onclick="switchTab('overview')" id="btn-overview" class="flex-1 py-3 text-center text-[11px] font-medium text-gray-400 active-tab transition-all">
             <i class="fa-solid fa-chart-simple block mb-0.5 text-center"></i> Analytics
@@ -47,38 +44,74 @@
         </button>
     </nav>
 
+    <!-- Main Content -->
     <main class="flex-1 overflow-y-auto p-4 no-scrollbar bg-black">
-        
-        <div id="tab-overview" class="tab-content space-y-4">
+
+        <!-- Analytics Tab -->
+        <div id="tab-overview" class="tab-content space-y-3">
+            <p class="text-[9px] text-gray-600 uppercase tracking-widest font-semibold">Today's Summary</p>
             <div class="grid grid-cols-2 gap-3">
-                <div class="bg-[#080808] p-3 rounded-lg border border-gray-900">
-                    <p class="text-[9px] text-gray-500 mb-0.5 uppercase tracking-wider">Total Players</p>
-                    <h3 id="stat-total-users" class="text-lg font-bold text-white">0</h3>
+                <div class="stat-card">
+                    <p class="stat-label">Total Players</p>
+                    <h3 id="stat-total-users" class="stat-value text-white">0</h3>
                 </div>
-                <div class="bg-[#080808] p-3 rounded-lg border border-gray-900">
-                    <p class="text-[9px] text-gray-500 mb-0.5 uppercase tracking-wider">Today Deposits</p>
-                    <h3 id="stat-total-deposit" class="text-lg font-bold text-emerald-500">0 K</h3>
+                <div class="stat-card">
+                    <p class="stat-label">Active Today</p>
+                    <h3 id="stat-active-today" class="stat-value text-sky-400">0</h3>
                 </div>
-                <div class="bg-[#080808] p-3 rounded-lg border border-gray-900">
-                    <p class="text-[9px] text-gray-500 mb-0.5 uppercase tracking-wider">Today Withdraw</p>
-                    <h3 id="stat-total-withdraw" class="text-lg font-bold text-rose-500">0 K</h3>
+                <div class="stat-card">
+                    <p class="stat-label">Today Deposits</p>
+                    <h3 id="stat-total-deposit" class="stat-value text-emerald-400">0 K</h3>
                 </div>
-                <div class="bg-[#080808] p-3 rounded-lg border border-gray-900">
-                    <p class="text-[9px] text-gray-500 mb-0.5 uppercase tracking-wider">Net Profit (GGR)</p>
-                    <h3 id="stat-ggr" class="text-lg font-bold text-indigo-400">0 K</h3>
+                <div class="stat-card">
+                    <p class="stat-label">Today Withdraw</p>
+                    <h3 id="stat-total-withdraw" class="stat-value text-rose-400">0 K</h3>
+                </div>
+                <div class="stat-card">
+                    <p class="stat-label">Net Profit (GGR)</p>
+                    <h3 id="stat-ggr" class="stat-value text-indigo-400">0 K</h3>
+                </div>
+                <div class="stat-card">
+                    <p class="stat-label">Pending Requests</p>
+                    <h3 id="stat-pending-tx" class="stat-value text-amber-400">0</h3>
+                </div>
+            </div>
+
+            <p class="text-[9px] text-gray-600 uppercase tracking-widest font-semibold pt-1">This Month</p>
+            <div class="grid grid-cols-2 gap-3">
+                <div class="stat-card">
+                    <p class="stat-label">Monthly Deposits</p>
+                    <h3 id="stat-monthly-dep" class="stat-value text-emerald-300">0 K</h3>
+                </div>
+                <div class="stat-card">
+                    <p class="stat-label">Monthly Withdraw</p>
+                    <h3 id="stat-monthly-wd" class="stat-value text-rose-300">0 K</h3>
                 </div>
             </div>
         </div>
 
-        <div id="tab-users" class="tab-content hidden">
+        <!-- Players Tab -->
+        <div id="tab-users" class="tab-content hidden space-y-3">
+            <div class="search-wrap">
+                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                <input type="text" placeholder="Search by name or phone..."
+                    oninput="onUserSearch(this.value)"
+                    class="w-full px-2 py-2 rounded outline-none text-[12px]">
+            </div>
+            <div id="user-filter-bar" class="filter-bar">
+                <span class="filter-chip active" data-filter="all" onclick="setUserFilter('all')">All</span>
+                <span class="filter-chip" data-filter="active" onclick="setUserFilter('active')">Active</span>
+                <span class="filter-chip" data-filter="banned" onclick="setUserFilter('banned')">Banned</span>
+            </div>
             <div class="bg-[#080808] border border-gray-900 rounded-lg overflow-x-auto no-scrollbar">
                 <table>
                     <thead>
                         <tr>
-                            <th>Player Credentials</th>
+                            <th>Player</th>
                             <th>Balance</th>
-                            <th>Turnover Left</th>
-                            <th class="text-right">Action</th>
+                            <th>Turnover</th>
+                            <th>Status</th>
+                            <th class="text-right">View</th>
                         </tr>
                     </thead>
                     <tbody id="user-table-body"></tbody>
@@ -86,15 +119,22 @@
             </div>
         </div>
 
-        <div id="tab-finance" class="tab-content hidden">
+        <!-- Finance Tab -->
+        <div id="tab-finance" class="tab-content hidden space-y-3">
+            <div id="finance-filter-bar" class="filter-bar">
+                <span class="filter-chip active" data-filter="pending" onclick="setFinanceFilter('pending')">Pending</span>
+                <span class="filter-chip" data-filter="approved" onclick="setFinanceFilter('approved')">Approved</span>
+                <span class="filter-chip" data-filter="rejected" onclick="setFinanceFilter('rejected')">Rejected</span>
+                <span class="filter-chip" data-filter="all" onclick="setFinanceFilter('all')">All</span>
+            </div>
             <div class="bg-[#080808] border border-gray-900 rounded-lg overflow-x-auto no-scrollbar">
                 <table>
                     <thead>
                         <tr>
-                            <th>User/Time</th>
+                            <th>User / Time</th>
                             <th>Type</th>
                             <th>Amount</th>
-                            <th>Payment Meta</th>
+                            <th>Payment</th>
                             <th class="text-right">Action</th>
                         </tr>
                     </thead>
@@ -103,51 +143,50 @@
             </div>
         </div>
 
+        <!-- Config Tab -->
         <div id="tab-settings" class="tab-content hidden space-y-4">
             <div class="bg-[#080808] p-4 rounded-lg border border-gray-900 space-y-3">
-                <h4 class="text-[11px] font-bold text-indigo-400 uppercase border-b border-gray-900 pb-1.5"><i class="fa-solid fa-sliders mr-1"></i> Core Parameters</h4>
-                <div class="space-y-2.5">
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="text-[9px] text-gray-500 block mb-1">Welcome Bonus</label>
-                            <select id="set-welcome-toggle" class="w-full px-2 py-1.5 rounded outline-none">
-                                <option value="true">ON (ဖွင့်)</option>
-                                <option value="false">OFF (ပိတ်)</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="text-[9px] text-gray-500 block mb-1">Welcome Amt (K)</label>
-                            <input type="number" id="set-welcome-amt" class="w-full px-2 py-1.5 rounded outline-none">
-                        </div>
+                <h4 class="text-[11px] font-bold text-indigo-400 uppercase border-b border-gray-900 pb-1.5">
+                    <i class="fa-solid fa-sliders mr-1"></i> Core Parameters
+                </h4>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-[9px] text-gray-500 block mb-1">Welcome Bonus</label>
+                        <select id="set-welcome-toggle" class="w-full px-2 py-1.5 rounded outline-none">
+                            <option value="true">ON (ဖွင့်)</option>
+                            <option value="false">OFF (ပိတ်)</option>
+                        </select>
                     </div>
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="text-[9px] text-gray-500 block mb-1">Dep Bonus (%)</label>
-                            <input type="number" id="set-bonus-rate" class="w-full px-2 py-1.5 rounded outline-none">
-                        </div>
-                        <div>
-                            <label class="text-[9px] text-gray-500 block mb-1">Turnover (X)</label>
-                            <input type="number" id="set-turnover-x" class="w-full px-2 py-1.5 rounded outline-none">
-                        </div>
+                    <div>
+                        <label class="text-[9px] text-gray-500 block mb-1">Welcome Amt (K)</label>
+                        <input type="number" id="set-welcome-amt" class="w-full px-2 py-1.5 rounded outline-none">
                     </div>
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="text-[9px] text-gray-500 block mb-1">Min Withdraw (K)</label>
-                            <input type="number" id="set-min-wd" class="w-full px-2 py-1.5 rounded outline-none">
-                        </div>
-                        <div>
-                            <label class="text-[9px] text-gray-500 block mb-1">Max Withdraw (K)</label>
-                            <input type="number" id="set-max-wd" class="w-full px-2 py-1.5 rounded outline-none">
-                        </div>
+                    <div>
+                        <label class="text-[9px] text-gray-500 block mb-1">Dep Bonus (%)</label>
+                        <input type="number" id="set-bonus-rate" class="w-full px-2 py-1.5 rounded outline-none">
+                    </div>
+                    <div>
+                        <label class="text-[9px] text-gray-500 block mb-1">Turnover (X)</label>
+                        <input type="number" id="set-turnover-x" class="w-full px-2 py-1.5 rounded outline-none">
+                    </div>
+                    <div>
+                        <label class="text-[9px] text-gray-500 block mb-1">Min Withdraw (K)</label>
+                        <input type="number" id="set-min-wd" class="w-full px-2 py-1.5 rounded outline-none">
+                    </div>
+                    <div>
+                        <label class="text-[9px] text-gray-500 block mb-1">Max Withdraw (K)</label>
+                        <input type="number" id="set-max-wd" class="w-full px-2 py-1.5 rounded outline-none">
                     </div>
                 </div>
-                <div class="pt-1">
-                    <button onclick="saveSiteSettings()" class="compact-btn bg-indigo-600 hover:bg-indigo-500 text-white w-full py-2">Update Parameters</button>
-                </div>
+                <button onclick="saveSiteSettings()" class="compact-btn bg-indigo-600 hover:bg-indigo-500 text-white w-full py-2">
+                    <i class="fa-solid fa-floppy-disk mr-1"></i> Update Parameters
+                </button>
             </div>
 
             <div class="bg-[#080808] p-4 rounded-lg border border-gray-900 space-y-3">
-                <h4 class="text-[11px] font-bold text-emerald-400 uppercase border-b border-gray-900 pb-1.5"><i class="fa-solid fa-wallet mr-1"></i> Hotline Gateways</h4>
+                <h4 class="text-[11px] font-bold text-emerald-400 uppercase border-b border-gray-900 pb-1.5">
+                    <i class="fa-solid fa-wallet mr-1"></i> Hotline Gateways
+                </h4>
                 <div id="payment-list" class="space-y-3">
                     <p class="text-[11px] text-gray-600 animate-pulse" id="pm-loading-text">Loading endpoints...</p>
                 </div>
@@ -156,255 +195,11 @@
 
     </main>
 
-    <script>
-        const SUPABASE_URL = "https://xjqrwcsxiaybpztzestb.supabase.co";
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhqcXJ3Y3N4aWF5YnB6dHplc3RiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzQxMDksImV4cCI6MjA5NDM1MDEwOX0.Kn5sLOTBdNtlooaH-q8ml0cOEswMlgMTSP7GFe7mbxg";
-        
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        function switchTab(tab) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            const target = document.getElementById(`tab-${tab}`);
-            if(target) target.classList.remove('hidden');
-            
-            document.querySelectorAll('nav button').forEach(btn => btn.classList.remove('active-tab'));
-            const activeBtn = document.getElementById(`btn-${tab}`);
-            if(activeBtn) activeBtn.classList.add('active-tab');
-
-            refreshData(tab);
-        }
-
-        async function refreshData(tab) {
-            if (!tab) {
-                const visibleTab = document.querySelector('.tab-content:not(.hidden)');
-                tab = visibleTab ? visibleTab.id.replace('tab-', '') : 'overview';
-            }
-            if (tab === 'overview') loadStats();
-            if (tab === 'users') loadUsers();
-            if (tab === 'finance') loadFinance();
-            if (tab === 'settings') loadSettings();
-        }
-
-        async function loadStats() {
-            try {
-                const { count: userCount } = await supabaseClient.from('users').select('*', { count: 'exact', head: true });
-                const { data: txs } = await supabaseClient.from('transactions').select('amount, type, status').eq('status', 'approved');
-                
-                let dep = 0, wit = 0;
-                txs?.forEach(t => {
-                    if (t.type === 'deposit') dep += parseFloat(t.amount || 0);
-                    if (t.type === 'withdrawal') wit += parseFloat(t.amount || 0);
-                });
-
-                document.getElementById('stat-total-users').innerText = userCount || 0;
-                document.getElementById('stat-total-deposit').innerText = dep.toLocaleString() + ' K';
-                document.getElementById('stat-total-withdraw').innerText = wit.toLocaleString() + ' K';
-                document.getElementById('stat-ggr').innerText = (dep - wit).toLocaleString() + ' K';
-            } catch(e) { console.error(e); }
-        }
-
-        async function loadUsers() {
-            try {
-                const { data: users } = await supabaseClient.from('users').select('*').order('created_at', { ascending: false });
-                const tbody = document.getElementById('user-table-body');
-                tbody.innerHTML = '';
-                users?.forEach(u => {
-                    const identifier = u.fullname || u.phone || u.username || 'Unknown';
-                    const bal = u.balance ? parseFloat(u.balance) : 0;
-                    const to = u.remaining_turnover ? parseFloat(u.remaining_turnover) : 0;
-                    tbody.innerHTML += `
-                        <tr>
-                            <td class="text-white font-medium max-w-[120px] truncate">${identifier}</td>
-                            <td class="text-emerald-400 font-bold">${bal.toLocaleString()} K</td>
-                            <td class="text-rose-400 font-bold">${to.toLocaleString()} K</td>
-                            <td class="text-right">
-                                <button onclick="adjustBalance('${u.id}', '${identifier}')" class="compact-btn bg-gray-900 border border-gray-800 text-gray-300">Edit</button>
-                            </td>
-                        </tr>
-                    `;
-                });
-            } catch(e) { console.error(e); }
-        }
-
-        async function loadFinance() {
-            try {
-                const { data: txs } = await supabaseClient.from('transactions').select('*, users(username, fullname, phone)').eq('status', 'pending').order('created_at', { ascending: true });
-                const tbody = document.getElementById('finance-table-body');
-                tbody.innerHTML = '';
-                
-                txs?.forEach(t => {
-                    const timestamp = new Date(t.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                    const clientName = t.users ? (t.users.fullname || t.users.phone || t.users.username) : 'Unknown';
-                    const col = t.type === 'deposit' ? 'text-emerald-500' : 'text-rose-500';
-                    tbody.innerHTML += `
-                        <tr>
-                            <td>
-                                <div class="text-[12px] text-white font-medium max-w-[100px] truncate">${clientName}</div>
-                                <div class="text-[9px] text-gray-600 font-mono">${timestamp}</div>
-                            </td>
-                            <td class="${col} font-bold text-[10px] uppercase">${t.type}</td>
-                            <td class="font-bold text-white">${parseFloat(t.amount).toLocaleString()} K</td>
-                            <td class="text-gray-500 text-[10px] max-w-[100px] truncate">${t.payment_details || '-'}</td>
-                            <td class="text-right space-x-1">
-                                <button onclick="processTx('${t.id}', '${t.user_id}', '${t.type}', ${t.amount}, 'approved')" class="compact-btn bg-indigo-600 text-white">Approve</button>
-                                <button onclick="processTx('${t.id}', '${t.user_id}', '${t.type}', ${t.amount}, 'rejected')" class="compact-btn bg-gray-900 text-rose-500 border border-rose-900/30">X</button>
-                            </td>
-                        </tr>
-                    `;
-                });
-            } catch(e) { console.error(e); }
-        }
-
-        async function processTx(id, uid, type, amount, status) {
-            try {
-                if (status === 'approved') {
-                    const { data: sets } = await supabaseClient.from('site_settings').select('*').eq('id', 1).single();
-                    const { data: profile } = await supabaseClient.from('users').select('balance, remaining_turnover').eq('id', uid).single();
-
-                    let targetBal = parseFloat(profile.balance || 0);
-                    let targetTO = parseFloat(profile.remaining_turnover || 0);
-
-                    if (type === 'deposit') {
-                        const calculatedBonus = amount * (parseFloat(sets.deposit_bonus_rate || 0) / 100);
-                        targetBal += (amount + calculatedBonus);
-                        targetTO += (amount * parseFloat(sets.turnover_multiplier || 0));
-                    } else if (type === 'withdrawal') {
-                        targetBal -= amount;
-                    }
-
-                    await supabaseClient.from('users').update({ balance: targetBal, remaining_turnover: targetTO }).eq('id', uid);
-                }
-
-                await supabaseClient.from('transactions').update({ status }).eq('id', id);
-                alert("Operation Synced Successfully!");
-                refreshData('finance');
-            } catch (err) {
-                console.error(err);
-                alert("Database transactional sync error.");
-            }
-        }
-
-        // 4. Remote Parameter Configuration Controls (Robust dynamic loading engine)
-        async function loadSettings() {
-            try {
-                const { data: sets } = await supabaseClient.from('site_settings').select('*').eq('id', 1).single();
-                
-                document.getElementById('set-welcome-toggle').value = sets.welcome_bonus_enabled.toString();
-                document.getElementById('set-welcome-amt').value = sets.welcome_bonus_amount;
-                document.getElementById('set-bonus-rate').value = sets.deposit_bonus_rate;
-                document.getElementById('set-turnover-x').value = sets.turnover_multiplier;
-                document.getElementById('set-min-wd').value = sets.min_withdrawal;
-                document.getElementById('set-max-wd').value = sets.max_withdrawal;
-
-                // Dynamic method reader architecture
-                const { data: methods, error: pmError } = await supabaseClient.from('payment_methods').select('*');
-                if (pmError) throw pmError;
-
-                const wrapper = document.getElementById('payment-list');
-                wrapper.innerHTML = '';
-                
-                if(!methods || methods.length === 0) {
-                    wrapper.innerHTML = `<p class="text-[11px] text-amber-500 p-1">No active gateways found. Please check database rows.</p>`;
-                    return;
-                }
-
-                methods.forEach(m => {
-                    const accName = m.account_name || '';
-                    const accNum = m.account_number || '';
-                    const rowId = m.id.toString(); // Parse safely to String to completely avoid loop rendering errors
-                    
-                    wrapper.innerHTML += `
-                        <div class="bg-black p-3 rounded border border-gray-900 space-y-2">
-                            <div class="flex items-center justify-between">
-                                <span class="text-[11px] text-indigo-400 font-bold uppercase tracking-wider">${m.provider_name || 'Gateway'}</span>
-                                <button onclick="updatePM('${rowId}')" class="compact-btn bg-emerald-950/70 text-emerald-400 border border-emerald-800/60 px-3 py-1">Save</button>
-                            </div>
-                            <div class="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label class="text-[9px] text-gray-500 block mb-0.5">Account Name</label>
-                                    <input type="text" value="${accName}" class="text-[11px] w-full p-1 rounded px-2 outline-none" id="pm-name-${rowId}" placeholder="အမည်">
-                                </div>
-                                <div>
-                                    <label class="text-[9px] text-gray-500 block mb-0.5">Account Number</label>
-                                    <input type="text" value="${accNum}" class="text-[11px] w-full p-1 rounded px-2 outline-none" id="pm-num-${rowId}" placeholder="ဖုန်းနံပါတ်">
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                });
-            } catch(e) { 
-                console.error(e); 
-                document.getElementById('payment-list').innerHTML = `<p class="text-[11px] text-rose-500">Failed to fetch payment providers.</p>`;
-            }
-        }
-
-        async function saveSiteSettings() {
-            try {
-                const payload = {
-                    welcome_bonus_enabled: document.getElementById('set-welcome-toggle').value === 'true',
-                    welcome_bonus_amount: parseFloat(document.getElementById('set-welcome-amt').value || 0),
-                    deposit_bonus_rate: parseFloat(document.getElementById('set-bonus-rate').value || 0),
-                    turnover_multiplier: parseFloat(document.getElementById('set-turnover-x').value || 0),
-                    min_withdrawal: parseFloat(document.getElementById('set-min-wd').value || 0),
-                    max_withdrawal: parseFloat(document.getElementById('set-max-wd').value || 0)
-                };
-                await supabaseClient.from('site_settings').update(payload).eq('id', 1);
-                alert("Master Configuration Synchronized!");
-            } catch(e) { alert("Fail to save master setup."); }
-        }
-
-        // Safe Dynamic Global Async Function Handler
-        async function updatePM(id) {
-            try {
-                const nameInput = document.getElementById(`pm-name-${id}`);
-                const numInput = document.getElementById(`pm-num-${id}`);
-                
-                if(!nameInput || !numInput) {
-                    alert("DOM elements mismatch target mapping error.");
-                    return;
-                }
-
-                const targetName = nameInput.value.trim();
-                const targetNum = numInput.value.trim();
-                
-                if (!targetName || !targetNum) {
-                    alert("အချက်အလက်များကို ပြည့်စုံစွာ ဖြည့်စွက်ပါဗျာ။");
-                    return;
-                }
-
-                // Parse standard ID back to number logic internally to match PostgreSQL schema constraints
-                const parsedId = parseInt(id);
-
-                const { error } = await supabaseClient
-                    .from('payment_methods')
-                    .update({ 
-                        account_name: targetName, 
-                        account_number: targetNum 
-                    })
-                    .eq('id', parsedId);
-
-                if (error) throw error;
-                
-                alert("Hotline endpoint data saved successfully!");
-                loadSettings(); // Force immediate background reload to secure synced state accuracy
-            } catch(e) { 
-                console.error(e);
-                alert("Fail to update hotline: " + e.message); 
-            }
-        }
-
-        async function adjustBalance(uid, name) {
-            try {
-                const changeAmt = prompt(`Adjust wallet for ${name} (Use + / - numbers):`);
-                if (!changeAmt || isNaN(changeAmt)) return;
-                const { data } = await supabaseClient.from('users').select('balance').eq('id', uid).single();
-                await supabaseClient.from('users').update({ balance: parseFloat(data.balance || 0) + parseFloat(changeAmt) }).eq('id', uid);
-                alert("User Wallet Adjusted!");
-                refreshData('users');
-            } catch(e) { console.error(e); }
-        }
-
-        window.onload = () => loadStats();
-    </script>
+    <script src="js/config.js"></script>
+    <script src="js/analytics.js"></script>
+    <script src="js/users.js"></script>
+    <script src="js/finance.js"></script>
+    <script src="js/settings.js"></script>
+    <script src="js/app.js"></script>
 </body>
 </html>
