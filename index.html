@@ -148,21 +148,18 @@
 
             <div class="bg-[#080808] p-4 rounded-lg border border-gray-900 space-y-3">
                 <h4 class="text-[11px] font-bold text-emerald-400 uppercase border-b border-gray-900 pb-1.5"><i class="fa-solid fa-wallet mr-1"></i> Hotline Gateways</h4>
-                <div id="payment-list" class="space-y-2"></div>
+                <div id="payment-list" class="space-y-3"></div>
             </div>
         </div>
 
     </main>
 
     <script>
-        // Set Explicit Supabase Client Data Credentials
         const SUPABASE_URL = "https://xjqrwcsxiaybpztzestb.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhqcXJ3Y3N4aWF5YnB6dHplc3RiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzQxMDksImV4cCI6MjA5NDM1MDEwOX0.Kn5sLOTBdNtlooaH-q8ml0cOEswMlgMTSP7GFe7mbxg";
         
-        // Changed variable name here to 'supabaseClient' to bypass global CDN definition crashes
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // Standard Navigation Tab Switch Engine
         function switchTab(tab) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             const target = document.getElementById(`tab-${tab}`);
@@ -186,7 +183,6 @@
             if (tab === 'settings') loadSettings();
         }
 
-        // 1. Calculations Statistics Engine
         async function loadStats() {
             try {
                 const { count: userCount } = await supabaseClient.from('users').select('*', { count: 'exact', head: true });
@@ -205,7 +201,6 @@
             } catch(e) { console.error(e); }
         }
 
-        // 2. Fetch Active Game Players
         async function loadUsers() {
             try {
                 const { data: users } = await supabaseClient.from('users').select('*').order('created_at', { ascending: false });
@@ -229,7 +224,6 @@
             } catch(e) { console.error(e); }
         }
 
-        // 3. Transactions Desk Routing
         async function loadFinance() {
             try {
                 const { data: txs } = await supabaseClient.from('transactions').select('*, users(username, fullname, phone)').eq('status', 'pending').order('created_at', { ascending: true });
@@ -288,7 +282,7 @@
             }
         }
 
-        // 4. Remote Parameter Configuration Controls
+        // 4. Remote Parameter Configuration Controls (Updated to load Account Name & Number)
         async function loadSettings() {
             try {
                 const { data: sets } = await supabaseClient.from('site_settings').select('*').eq('id', 1).single();
@@ -303,12 +297,27 @@
                 const { data: methods } = await supabaseClient.from('payment_methods').select('*').order('id', { ascending: true });
                 const wrapper = document.getElementById('payment-list');
                 wrapper.innerHTML = '';
+                
                 methods?.forEach(m => {
+                    const accName = m.account_name || '';
+                    const accNum = m.account_number || '';
+                    
                     wrapper.innerHTML += `
-                        <div class="flex gap-2 items-center bg-black p-2 rounded border border-gray-900">
-                            <span class="text-[10px] w-12 text-gray-400 font-bold uppercase">${m.provider_name}</span>
-                            <input type="text" value="${m.account_number}" class="text-[11px] flex-1 p-1 rounded px-2" id="pm-num-${m.id}">
-                            <button onclick="updatePM(${m.id})" class="compact-btn bg-emerald-950/50 text-emerald-400 border border-emerald-900/50">Save</button>
+                        <div class="bg-black p-3 rounded border border-gray-900 space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="text-[11px] text-indigo-400 font-bold uppercase tracking-wider">${m.provider_name}</span>
+                                <button onclick="updatePM(${m.id})" class="compact-btn bg-emerald-950/70 text-emerald-400 border border-emerald-800/60 px-3 py-1">Save</button>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="text-[9px] text-gray-500 block mb-0.5">Account Name</label>
+                                    <input type="text" value="${accName}" class="text-[11px] w-full p-1 rounded px-2 outline-none" id="pm-name-${m.id}" placeholder="အမည်">
+                                </div>
+                                <div>
+                                    <label class="text-[9px] text-gray-500 block mb-0.5">Account Number</label>
+                                    <input type="text" value="${accNum}" class="text-[11px] w-full p-1 rounded px-2 outline-none" id="pm-num-${m.id}" placeholder="ဖုန်းနံပါတ်">
+                                </div>
+                            </div>
                         </div>
                     `;
                 });
@@ -330,15 +339,34 @@
             } catch(e) { alert("Fail to save master setup."); }
         }
 
+        // Updated Function to Save both account_name and account_number in Real Time
         async function updatePM(id) {
             try {
-                const targetVal = document.getElementById(`pm-num-${id}`).value;
-                await supabaseClient.from('payment_methods').update({ account_number: targetVal }).eq('id', id);
-                alert("Hotline endpoint data saved!");
-            } catch(e) { alert("Fail to update hotline."); }
+                const targetName = document.getElementById(`pm-name-${id}`).value.trim();
+                const targetNum = document.getElementById(`pm-num-${id}`).value.trim();
+                
+                if (!targetName || !targetNum) {
+                    alert("အချက်အလက်များကို ပြည့်စုံစွာ ဖြည့်စွက်ပါဗျာ။");
+                    return;
+                }
+
+                const { error } = await supabaseClient
+                    .from('payment_methods')
+                    .update({ 
+                        account_name: targetName, 
+                        account_number: targetNum 
+                    })
+                    .eq('id', id);
+
+                if (error) throw error;
+                
+                alert("Hotline endpoint data saved successfully!");
+            } catch(e) { 
+                console.error(e);
+                alert("Fail to update hotline: " + e.message); 
+            }
         }
 
-        // Back-Office Quick Adjustments Control
         async function adjustBalance(uid, name) {
             try {
                 const changeAmt = prompt(`Adjust wallet for ${name} (Use + / - numbers):`);
@@ -350,7 +378,6 @@
             } catch(e) { console.error(e); }
         }
 
-        // Initialize App Dashboard Trigger
         window.onload = () => loadStats();
     </script>
 </body>
