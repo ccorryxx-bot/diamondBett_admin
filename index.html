@@ -148,7 +148,9 @@
 
             <div class="bg-[#080808] p-4 rounded-lg border border-gray-900 space-y-3">
                 <h4 class="text-[11px] font-bold text-emerald-400 uppercase border-b border-gray-900 pb-1.5"><i class="fa-solid fa-wallet mr-1"></i> Hotline Gateways</h4>
-                <div id="payment-list" class="space-y-3"></div>
+                <div id="payment-list" class="space-y-3">
+                    <p class="text-[11px] text-gray-600 animate-pulse" id="pm-loading-text">Loading endpoints...</p>
+                </div>
             </div>
         </div>
 
@@ -282,7 +284,7 @@
             }
         }
 
-        // 4. Remote Parameter Configuration Controls (Updated to load Account Name & Number)
+        // 4. Remote Parameter Configuration Controls (Robust dynamic loading engine)
         async function loadSettings() {
             try {
                 const { data: sets } = await supabaseClient.from('site_settings').select('*').eq('id', 1).single();
@@ -294,34 +296,46 @@
                 document.getElementById('set-min-wd').value = sets.min_withdrawal;
                 document.getElementById('set-max-wd').value = sets.max_withdrawal;
 
-                const { data: methods } = await supabaseClient.from('payment_methods').select('*').order('id', { ascending: true });
+                // Dynamic method reader architecture
+                const { data: methods, error: pmError } = await supabaseClient.from('payment_methods').select('*');
+                if (pmError) throw pmError;
+
                 const wrapper = document.getElementById('payment-list');
                 wrapper.innerHTML = '';
                 
-                methods?.forEach(m => {
+                if(!methods || methods.length === 0) {
+                    wrapper.innerHTML = `<p class="text-[11px] text-amber-500 p-1">No active gateways found. Please check database rows.</p>`;
+                    return;
+                }
+
+                methods.forEach(m => {
                     const accName = m.account_name || '';
                     const accNum = m.account_number || '';
+                    const rowId = m.id.toString(); // Parse safely to String to completely avoid loop rendering errors
                     
                     wrapper.innerHTML += `
                         <div class="bg-black p-3 rounded border border-gray-900 space-y-2">
                             <div class="flex items-center justify-between">
-                                <span class="text-[11px] text-indigo-400 font-bold uppercase tracking-wider">${m.provider_name}</span>
-                                <button onclick="updatePM(${m.id})" class="compact-btn bg-emerald-950/70 text-emerald-400 border border-emerald-800/60 px-3 py-1">Save</button>
+                                <span class="text-[11px] text-indigo-400 font-bold uppercase tracking-wider">${m.provider_name || 'Gateway'}</span>
+                                <button onclick="updatePM('${rowId}')" class="compact-btn bg-emerald-950/70 text-emerald-400 border border-emerald-800/60 px-3 py-1">Save</button>
                             </div>
                             <div class="grid grid-cols-2 gap-2">
                                 <div>
                                     <label class="text-[9px] text-gray-500 block mb-0.5">Account Name</label>
-                                    <input type="text" value="${accName}" class="text-[11px] w-full p-1 rounded px-2 outline-none" id="pm-name-${m.id}" placeholder="အမည်">
+                                    <input type="text" value="${accName}" class="text-[11px] w-full p-1 rounded px-2 outline-none" id="pm-name-${rowId}" placeholder="အမည်">
                                 </div>
                                 <div>
                                     <label class="text-[9px] text-gray-500 block mb-0.5">Account Number</label>
-                                    <input type="text" value="${accNum}" class="text-[11px] w-full p-1 rounded px-2 outline-none" id="pm-num-${m.id}" placeholder="ဖုန်းနံပါတ်">
+                                    <input type="text" value="${accNum}" class="text-[11px] w-full p-1 rounded px-2 outline-none" id="pm-num-${rowId}" placeholder="ဖုန်းနံပါတ်">
                                 </div>
                             </div>
                         </div>
                     `;
                 });
-            } catch(e) { console.error(e); }
+            } catch(e) { 
+                console.error(e); 
+                document.getElementById('payment-list').innerHTML = `<p class="text-[11px] text-rose-500">Failed to fetch payment providers.</p>`;
+            }
         }
 
         async function saveSiteSettings() {
@@ -339,16 +353,27 @@
             } catch(e) { alert("Fail to save master setup."); }
         }
 
-        // Updated Function to Save both account_name and account_number in Real Time
+        // Safe Dynamic Global Async Function Handler
         async function updatePM(id) {
             try {
-                const targetName = document.getElementById(`pm-name-${id}`).value.trim();
-                const targetNum = document.getElementById(`pm-num-${id}`).value.trim();
+                const nameInput = document.getElementById(`pm-name-${id}`);
+                const numInput = document.getElementById(`pm-num-${id}`);
+                
+                if(!nameInput || !numInput) {
+                    alert("DOM elements mismatch target mapping error.");
+                    return;
+                }
+
+                const targetName = nameInput.value.trim();
+                const targetNum = numInput.value.trim();
                 
                 if (!targetName || !targetNum) {
                     alert("အချက်အလက်များကို ပြည့်စုံစွာ ဖြည့်စွက်ပါဗျာ။");
                     return;
                 }
+
+                // Parse standard ID back to number logic internally to match PostgreSQL schema constraints
+                const parsedId = parseInt(id);
 
                 const { error } = await supabaseClient
                     .from('payment_methods')
@@ -356,11 +381,12 @@
                         account_name: targetName, 
                         account_number: targetNum 
                     })
-                    .eq('id', id);
+                    .eq('id', parsedId);
 
                 if (error) throw error;
                 
                 alert("Hotline endpoint data saved successfully!");
+                loadSettings(); // Force immediate background reload to secure synced state accuracy
             } catch(e) { 
                 console.error(e);
                 alert("Fail to update hotline: " + e.message); 
