@@ -256,11 +256,13 @@ async function processTx(id, uid, type, amount, status, adminNote = '') {
                     const commRate = parseFloat(sets.commission_rate || 0);
                     if (commRate > 0) {
                         const commAmt = amount * (commRate / 100);
-                        try {
-                            const { data: referrer } = await db.from('users')
+                        const { data: referrer, error: refErr } = await db.from('users')
                                 .select('balance').eq('id', referrerId).single();
+                        if (refErr) {
+                            showToast('Agent ရှာမတွေ့: ' + refErr.message, 'error');
+                        } else {
                             const newRefBal = parseFloat(referrer?.balance || 0) + commAmt;
-                            await Promise.all([
+                            const [{ error: balErr }, { error: commErr }] = await Promise.all([
                                 db.from('users').update({ balance: newRefBal }).eq('id', referrerId),
                                 db.from('commissions').insert({
                                     agent_id:       referrerId,
@@ -273,7 +275,10 @@ async function processTx(id, uid, type, amount, status, adminNote = '') {
                                     created_at:     now
                                 })
                             ]);
-                        } catch(ce) { console.warn('Commission error:', ce); }
+                            if (balErr)  showToast('Agent balance error: ' + balErr.message,  'error');
+                            if (commErr) showToast('Commission insert error: ' + commErr.message, 'error');
+                            if (!balErr && !commErr) showToast(`Commission ${commAmt.toLocaleString()} K → Agent ကို ပေးပြီ`, 'success');
+                        }
                     }
                 }
             } else if (type === 'withdrawal') {
