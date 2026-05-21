@@ -244,6 +244,66 @@
                     <p class="text-[11px] text-slate-400 animate-pulse" id="pm-loading-text">Gateway တင်နေသည်...</p>
                 </div>
             </div>
+
+            <!-- ===== Bonus Codes ===== -->
+            <div class="card space-y-3">
+                <h4 class="text-[11px] font-bold text-purple-600 uppercase border-b border-slate-100 pb-2">
+                    <i class="fa-solid fa-ticket mr-1"></i> Bonus Code စီမံခန့်ခွဲမှု
+                </h4>
+
+                <!-- Create new code -->
+                <div class="bg-purple-50 border border-purple-100 rounded-lg p-3 space-y-2">
+                    <p class="text-[9px] text-purple-600 font-bold uppercase">Code အသစ် ဖန်တီးမည်</p>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-[9px] text-slate-500 block mb-0.5">Code နာမည်</label>
+                            <input type="text" id="bc-code" placeholder="WELCOME100" class="w-full px-2 py-1.5 rounded-lg text-[11px] uppercase">
+                        </div>
+                        <div>
+                            <label class="text-[9px] text-slate-500 block mb-0.5">ဘောနပ်ငွေ (K)</label>
+                            <input type="number" id="bc-amount" placeholder="10000" class="w-full px-2 py-1.5 rounded-lg text-[11px]">
+                        </div>
+                        <div>
+                            <label class="text-[9px] text-slate-500 block mb-0.5">Turnover (X)</label>
+                            <input type="number" id="bc-turnover" value="10" class="w-full px-2 py-1.5 rounded-lg text-[11px]">
+                        </div>
+                        <div>
+                            <label class="text-[9px] text-slate-500 block mb-0.5">အများဆုံး သုံးနိုင်သော ကြိမ်</label>
+                            <input type="number" id="bc-maxuses" placeholder="100" class="w-full px-2 py-1.5 rounded-lg text-[11px]">
+                        </div>
+                        <div>
+                            <label class="text-[9px] text-slate-500 block mb-0.5">အနည်းဆုံး ငွေသွင်း (K)</label>
+                            <input type="number" id="bc-mindeposit" value="0" class="w-full px-2 py-1.5 rounded-lg text-[11px]">
+                        </div>
+                        <div>
+                            <label class="text-[9px] text-slate-500 block mb-0.5">သက်တမ်းကုန်မည့်ရက်</label>
+                            <input type="date" id="bc-expires" class="w-full px-2 py-1.5 rounded-lg text-[11px]">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-[9px] text-slate-500 block mb-0.5">ဖော်ပြချက်</label>
+                        <input type="text" id="bc-desc" placeholder="ဥပမာ: New member welcome bonus" class="w-full px-2 py-1.5 rounded-lg text-[11px]">
+                    </div>
+                    <button onclick="createBonusCode()" class="compact-btn btn-primary w-full py-2 text-[11px]">
+                        <i class="fa-solid fa-plus mr-1"></i> Code ဖန်တီးမည်
+                    </button>
+                </div>
+
+                <!-- Codes list -->
+                <div id="bonus-codes-list" class="space-y-2">
+                    <p class="text-[11px] text-slate-400 animate-pulse text-center py-2">Codes တင်နေသည်...</p>
+                </div>
+            </div>
+
+            <!-- ===== Claim History ===== -->
+            <div class="card space-y-2">
+                <h4 class="text-[11px] font-bold text-amber-600 uppercase border-b border-slate-100 pb-2">
+                    <i class="fa-solid fa-clock-rotate-left mr-1"></i> Bonus Claim မှတ်တမ်း
+                </h4>
+                <div id="bonus-claims-list">
+                    <p class="text-[11px] text-slate-400 animate-pulse text-center py-2">တင်နေသည်...</p>
+                </div>
+            </div>
         </div>
 
     </main>
