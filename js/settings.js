@@ -2,7 +2,7 @@ async function loadSettings() {
     try {
         const [{ data: sets }, { data: methods }, { data: bonusCodes }, { data: claims }] = await Promise.all([
             db.from('site_settings').select('*').eq('id',1).single(),
-            db.from('payment_methods').select('*').order('display_order'),
+            db.from('payment_methods').select('*').order('id', { ascending: true }),
             db.from('bonus_codes').select('*').order('created_at',{ascending:false}),
             db.from('user_bonus_claims').select('id,claimed_at,amount,bonus_type,user_id,users(fullname,phone)')
                 .order('claimed_at',{ascending:false}).limit(20)
@@ -27,41 +27,87 @@ async function loadSettings() {
         const wrapper = document.getElementById('payment-list');
         document.getElementById('pm-loading-text')?.remove();
         wrapper.innerHTML = '';
-        if (!methods?.length) { wrapper.innerHTML = `<p class="text-[11px] text-amber-500 p-2">Gateway မတွေ့ပါ</p>`; }
-        else methods.forEach(m => {
-            const id = m.id.toString();
-            wrapper.innerHTML += `
-            <div class="card space-y-2" style="will-change:transform;contain:content;">
-                <div class="flex items-center justify-between">
-                    <span class="text-[11px] font-bold uppercase" style="color:var(--purple-bright)">${m.provider_name || 'Gateway'}</span>
-                    <div class="flex gap-1.5 items-center">
-                        <select id="pm-status-${id}" class="text-[10px] px-2 py-1 rounded-lg">
-                            <option value="true"  ${m.is_active !== false ? 'selected':''}>Active</option>
-                            <option value="false" ${m.is_active === false  ? 'selected':''}>Inactive</option>
-                        </select>
-                        <button onclick="updatePM('${id}')" class="compact-btn btn-success px-3 py-1 text-[10px]">သိမ်း</button>
+
+        // Add New Gateway button (always show)
+        wrapper.innerHTML = `
+        <button onclick="showAddGateway()"
+            class="compact-btn btn-primary w-full py-2.5 mb-2 text-[11px]">
+            <i class="fa-solid fa-plus mr-1"></i> Gateway အသစ် ထည့်မည်
+        </button>`;
+
+        if (!methods?.length) {
+            wrapper.innerHTML += `<p class="text-[11px] text-amber-500 p-2 text-center">Gateway မရှိသေးပါ — အသစ်ထည့်ပါ</p>`;
+        } else {
+            methods.forEach(m => {
+                const id        = m.id.toString();
+                const isActive  = m.is_active !== false;
+                const isRec     = m.is_recommended === true;
+                // min/max_amount columns may not exist yet (before migration)
+                const minAmt    = m.min_amount  != null ? m.min_amount  : 5000;
+                const maxAmt    = m.max_amount  != null ? m.max_amount  : 5000000;
+                const provIcon  = (m.provider_name||'').toLowerCase().includes('kbz')  ? '🏦' :
+                                  (m.provider_name||'').toLowerCase().includes('wave') ? '🌊' :
+                                  (m.provider_name||'').toLowerCase().includes('aya')  ? '🏛️' : '💳';
+                wrapper.innerHTML += `
+                <div class="card space-y-3" style="will-change:transform;contain:content;border-left:3px solid ${isActive ? 'var(--cyan)' : 'rgba(255,77,141,0.5)'}">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[18px]">${provIcon}</span>
+                            <div>
+                                <p class="text-[12px] font-bold" style="color:var(--purple-bright)">${m.provider_name || 'Gateway'}</p>
+                                ${isRec ? '<span class="badge badge-active text-[8px]">⭐ Recommended</span>' : ''}
+                            </div>
+                        </div>
+                        <div class="flex gap-1.5 items-center">
+                            <select id="pm-status-${id}" class="text-[10px] px-2 py-1 rounded-lg">
+                                <option value="true"  ${isActive  ? 'selected':''}>✅ Active</option>
+                                <option value="false" ${!isActive ? 'selected':''}>🔴 Inactive</option>
+                            </select>
+                            <button onclick="updatePM('${id}')" class="compact-btn btn-success px-3 py-1 text-[10px]">
+                                <i class="fa-solid fa-floppy-disk"></i>
+                            </button>
+                            <button onclick="deletePM('${id}','${m.provider_name||''}')" class="compact-btn btn-danger px-2 py-1 text-[10px]">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
                     </div>
-                </div>
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="text-[9px] block mb-0.5" style="color:var(--text-secondary)">အကောင့်အမည်</label>
-                        <input type="text" value="${m.account_name||''}" id="pm-name-${id}" class="text-[11px] w-full p-1.5 rounded-lg px-2" placeholder="အမည်">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-[9px] block mb-0.5" style="color:var(--text-dim)">Provider / ဝန်ဆောင်မှု</label>
+                            <input type="text" value="${m.provider_name||''}" id="pm-provider-${id}"
+                                class="text-[11px] w-full p-1.5 rounded-lg px-2" placeholder="KBZ Pay">
+                        </div>
+                        <div>
+                            <label class="text-[9px] block mb-0.5" style="color:var(--text-dim)">Recommended</label>
+                            <select id="pm-rec-${id}" class="text-[11px] w-full p-1.5 rounded-lg px-2">
+                                <option value="true"  ${isRec  ? 'selected':''}>⭐ ပင်မ</option>
+                                <option value="false" ${!isRec ? 'selected':''}>ပုံမှန်</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[9px] block mb-0.5" style="color:var(--text-dim)">အကောင့်အမည်</label>
+                            <input type="text" value="${m.account_name||''}" id="pm-name-${id}"
+                                class="text-[11px] w-full p-1.5 rounded-lg px-2" placeholder="ဦးအောင်မြင့်">
+                        </div>
+                        <div>
+                            <label class="text-[9px] block mb-0.5" style="color:var(--text-dim)">အကောင့်နံပါတ်</label>
+                            <input type="text" value="${m.account_number||''}" id="pm-num-${id}"
+                                class="text-[11px] w-full p-1.5 rounded-lg px-2" placeholder="09xxxxxxxxx">
+                        </div>
+                        <div>
+                            <label class="text-[9px] block mb-0.5" style="color:var(--text-dim)">အနည်းဆုံး (K)</label>
+                            <input type="number" value="${minAmt}" id="pm-min-${id}"
+                                class="text-[11px] w-full p-1.5 rounded-lg px-2">
+                        </div>
+                        <div>
+                            <label class="text-[9px] block mb-0.5" style="color:var(--text-dim)">အများဆုံး (K)</label>
+                            <input type="number" value="${maxAmt}" id="pm-max-${id}"
+                                class="text-[11px] w-full p-1.5 rounded-lg px-2">
+                        </div>
                     </div>
-                    <div>
-                        <label class="text-[9px] block mb-0.5" style="color:var(--text-secondary)">အကောင့်နံပါတ်</label>
-                        <input type="text" value="${m.account_number||''}" id="pm-num-${id}" class="text-[11px] w-full p-1.5 rounded-lg px-2" placeholder="ဖုန်းနံပါတ်">
-                    </div>
-                    <div>
-                        <label class="text-[9px] block mb-0.5" style="color:var(--text-secondary)">အနည်းဆုံး (K)</label>
-                        <input type="number" value="${m.min_amount||5000}" id="pm-min-${id}" class="text-[11px] w-full p-1.5 rounded-lg px-2">
-                    </div>
-                    <div>
-                        <label class="text-[9px] block mb-0.5" style="color:var(--text-secondary)">အများဆုံး (K)</label>
-                        <input type="number" value="${m.max_amount||5000000}" id="pm-max-${id}" class="text-[11px] w-full p-1.5 rounded-lg px-2">
-                    </div>
-                </div>
-            </div>`;
-        });
+                </div>`;
+            });
+        }
 
         // Bonus codes
         renderBonusCodes(bonusCodes || []);
@@ -160,17 +206,117 @@ async function saveSettings() {
 
 async function updatePM(id) {
     try {
+        // Base fields (always exist)
         const updates = {
-            account_name:   document.getElementById(`pm-name-${id}`)?.value,
-            account_number: document.getElementById(`pm-num-${id}`)?.value,
-            is_active:      document.getElementById(`pm-status-${id}`)?.value === 'true',
-            min_amount:     parseFloat(document.getElementById(`pm-min-${id}`)?.value || 5000),
-            max_amount:     parseFloat(document.getElementById(`pm-max-${id}`)?.value || 5000000),
-            updated_at:     new Date().toISOString()
+            provider_name:    document.getElementById(`pm-provider-${id}`)?.value?.trim() || '',
+            account_name:     document.getElementById(`pm-name-${id}`)?.value?.trim()     || '',
+            account_number:   document.getElementById(`pm-num-${id}`)?.value?.trim()      || '',
+            is_active:        document.getElementById(`pm-status-${id}`)?.value === 'true',
+            is_recommended:   document.getElementById(`pm-rec-${id}`)?.value   === 'true',
+            updated_at:       new Date().toISOString()
         };
+        // Optional limit columns (exist after migration)
+        const minEl = document.getElementById(`pm-min-${id}`);
+        const maxEl = document.getElementById(`pm-max-${id}`);
+        if (minEl?.value) updates.min_amount = parseFloat(minEl.value);
+        if (maxEl?.value) updates.max_amount = parseFloat(maxEl.value);
+
         const { error } = await db.from('payment_methods').update(updates).eq('id', id);
         if (error) throw error;
-        showToast('Payment method သိမ်းပြီ!', 'success');
+        showToast(`${updates.provider_name} သိမ်းပြီ! ✅`, 'success');
+        loadSettings();
+    } catch(e) { showToast('မအောင်မြင်ပါ: ' + e.message, 'error'); }
+}
+
+async function deletePM(id, name) {
+    if (!confirm(`"${name}" ကို ဖျက်မှာ သေချာပါသလား?`)) return;
+    try {
+        const { error } = await db.from('payment_methods').delete().eq('id', id);
+        if (error) throw error;
+        showToast(`${name} ဖျက်ပြီ!`, 'success');
+        loadSettings();
+    } catch(e) { showToast('မအောင်မြင်ပါ: ' + e.message, 'error'); }
+}
+
+function showAddGateway() {
+    const existing = document.getElementById('add-gateway-form');
+    if (existing) { existing.remove(); return; }
+
+    const form = document.createElement('div');
+    form.id = 'add-gateway-form';
+    form.className = 'card space-y-3 mt-2';
+    form.style.cssText = 'border:1px solid var(--border-c);box-shadow:var(--glow-border-c)';
+    form.innerHTML = `
+        <p class="section-title text-cyan-400">🆕 Gateway အသစ် ထည့်မည်</p>
+        <div class="grid grid-cols-2 gap-2">
+            <div class="col-span-2">
+                <label class="text-[9px] block mb-0.5" style="color:var(--text-dim)">Provider အမည် (KBZ Pay / Wave / AYA Bank)</label>
+                <input type="text" id="new-pm-provider" placeholder="KBZ Pay"
+                    class="text-[11px] w-full p-1.5 rounded-lg px-2">
+            </div>
+            <div>
+                <label class="text-[9px] block mb-0.5" style="color:var(--text-dim)">အကောင့်အမည်</label>
+                <input type="text" id="new-pm-name" placeholder="ဦးအောင်မြင့်"
+                    class="text-[11px] w-full p-1.5 rounded-lg px-2">
+            </div>
+            <div>
+                <label class="text-[9px] block mb-0.5" style="color:var(--text-dim)">ဖုန်းနံပါတ် / အကောင့်</label>
+                <input type="text" id="new-pm-number" placeholder="09xxxxxxxxx"
+                    class="text-[11px] w-full p-1.5 rounded-lg px-2">
+            </div>
+            <div>
+                <label class="text-[9px] block mb-0.5" style="color:var(--text-dim)">Recommended</label>
+                <select id="new-pm-rec" class="text-[11px] w-full p-1.5 rounded-lg px-2">
+                    <option value="false">ပုံမှန်</option>
+                    <option value="true">⭐ ပင်မ</option>
+                </select>
+            </div>
+            <div>
+                <label class="text-[9px] block mb-0.5" style="color:var(--text-dim)">Status</label>
+                <select id="new-pm-status" class="text-[11px] w-full p-1.5 rounded-lg px-2">
+                    <option value="true">✅ Active</option>
+                    <option value="false">🔴 Inactive</option>
+                </select>
+            </div>
+        </div>
+        <div class="flex gap-2">
+            <button onclick="createGateway()" class="compact-btn btn-primary flex-1 py-2">
+                <i class="fa-solid fa-plus mr-1"></i> ထည့်မည်
+            </button>
+            <button onclick="document.getElementById('add-gateway-form').remove()"
+                class="compact-btn btn-ghost px-4 py-2">
+                မလုပ်တော့
+            </button>
+        </div>`;
+
+    const wrapper = document.getElementById('payment-list');
+    wrapper.appendChild(form);
+    document.getElementById('new-pm-provider')?.focus();
+}
+
+async function createGateway() {
+    const provider = document.getElementById('new-pm-provider')?.value?.trim();
+    const name     = document.getElementById('new-pm-name')?.value?.trim();
+    const number   = document.getElementById('new-pm-number')?.value?.trim();
+    const rec      = document.getElementById('new-pm-rec')?.value === 'true';
+    const active   = document.getElementById('new-pm-status')?.value === 'true';
+
+    if (!provider || !name || !number) {
+        showToast('Provider, အမည် နှင့် နံပါတ် ဖြည့်ပါ', 'error'); return;
+    }
+    try {
+        const { error } = await db.from('payment_methods').insert({
+            provider_name:  provider,
+            account_name:   name,
+            account_number: number,
+            is_recommended: rec,
+            is_active:      active,
+            created_at:     new Date().toISOString(),
+            updated_at:     new Date().toISOString()
+        });
+        if (error) throw error;
+        showToast(`${provider} ထည့်ပြီ! ✅`, 'success');
+        loadSettings();
     } catch(e) { showToast('မအောင်မြင်ပါ: ' + e.message, 'error'); }
 }
 
