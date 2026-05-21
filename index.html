@@ -1,15 +1,78 @@
 <!DOCTYPE html>
 <html lang="my">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Diamond-Bett | Admin</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="css/styles.css">
-</head>
-<body class="flex flex-col h-screen overflow-hidden bg-slate-100">
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Diamond-Bett | Admin</title>
+      <script>
+          // Tailwind Cyberpunk Override
+          tailwind.config = {
+              darkMode: 'class',
+              theme: {
+                  extend: {
+                      colors: {
+                          slate: {
+                              50:  '#0e0e1c',
+                              100: '#07070f',
+                              200: '#0b0b18',
+                              300: '#4a5580',
+                              400: '#4a5580',
+                              500: '#8892b0',
+                              600: '#8892b0',
+                              700: '#c77dff',
+                              800: '#e2e4f0',
+                              900: '#f0f0ff',
+                          },
+                          indigo: {
+                              50:  'rgba(157,78,221,0.15)',
+                              100: 'rgba(157,78,221,0.2)',
+                              200: 'rgba(157,78,221,0.25)',
+                              300: '#9d4edd',
+                              400: '#9d4edd',
+                              500: '#c77dff',
+                              600: '#c77dff',
+                              700: '#c77dff',
+                              800: '#e2e4f0',
+                              900: '#f0f0ff',
+                          },
+                          purple: {
+                              50:  'rgba(157,78,221,0.15)',
+                              100: 'rgba(157,78,221,0.2)',
+                              400: '#9d4edd',
+                              600: '#c77dff',
+                              700: '#c77dff',
+                          },
+                          sky: {
+                              500: '#67f5ff',
+                              600: '#00e5ff',
+                          },
+                          emerald: {
+                              500: '#00ffb3',
+                              600: '#00ffb3',
+                          },
+                          rose: {
+                              500: '#ff4d8d',
+                              600: '#ff4d8d',
+                          },
+                          amber: {
+                              600: '#ffd700',
+                          },
+                          white: '#0e0e1c',
+                          gray: {
+                              50: '#0e0e1c',
+                              100: '#07070f',
+                          }
+                      }
+                  }
+              }
+          }
+      </script>
+      <script src="https://cdn.tailwindcss.com"></script>
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+      <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+      <link rel="stylesheet" href="css/styles.css">
+  </head>
+<body class="flex flex-col h-screen overflow-hidden" style="background-color:#07070f">
 
     <!-- Toast -->
     <div id="toast"></div>
