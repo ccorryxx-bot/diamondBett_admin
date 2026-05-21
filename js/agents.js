@@ -25,9 +25,19 @@ async function loadAgents() {
         const toggleEl = document.getElementById('agent-comm-toggle');
         if (toggleEl) toggleEl.value = enabled.toString();
 
-        // Build agent map: users who are referrers
-        const referrerIds = new Set(allUsers?.map(u => u.referrer_id).filter(Boolean) || []);
+        // ── BUG FIX ──────────────────────────────────────────────────────────
+        // referrer_id in DB may store ref_code string instead of UUID.
+        // Build a ref_code → UUID lookup so counts resolve correctly.
+        const refCodeToId = {};
+        allUsers?.forEach(u => { if (u.ref_code) refCodeToId[u.ref_code] = u.id; });
+        const resolveRef = (rid) => refCodeToId[rid] || rid;
+
+        // Build agent set using resolved UUIDs
+        const referrerIds = new Set(
+            allUsers?.map(u => u.referrer_id).filter(Boolean).map(resolveRef) || []
+        );
         const agents = allUsers?.filter(u => referrerIds.has(u.id) || u.role === 'agent') || [];
+        // ─────────────────────────────────────────────────────────────────────
 
         // Commission totals per agent
         const commTotals = {};
@@ -36,10 +46,13 @@ async function loadAgents() {
             commTotals[c.agent_id] += parseFloat(c.amount || 0);
         });
 
-        // Subordinate count per agent
+        // Subordinate count per agent — resolve ref_code to UUID before tallying
         const subCounts = {};
         allUsers?.forEach(u => {
-            if (u.referrer_id) subCounts[u.referrer_id] = (subCounts[u.referrer_id] || 0) + 1;
+            if (u.referrer_id) {
+                const agentUUID = resolveRef(u.referrer_id);
+                subCounts[agentUUID] = (subCounts[agentUUID] || 0) + 1;
+            }
         });
 
         // Render agent cards
