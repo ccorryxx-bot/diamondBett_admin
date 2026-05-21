@@ -25,6 +25,7 @@ function refreshData(tab) {
     if (tab === 'overview') loadStats();
     if (tab === 'users') loadUsers();
     if (tab === 'finance') loadFinance();
+    if (tab === 'agents') loadAgents();
     if (tab === 'settings') loadSettings();
 }
 

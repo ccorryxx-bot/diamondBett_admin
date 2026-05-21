@@ -166,7 +166,7 @@ async function processTx(id, uid, type, amount, status) {
         if (status === 'approved') {
             const [{ data: sets }, { data: profile }] = await Promise.all([
                 db.from('site_settings').select('*').eq('id',1).single(),
-                db.from('users').select('balance,remaining_turnover').eq('id',uid).single()
+                db.from('users').select('balance,remaining_turnover,referrer_id').eq('id',uid).single()
             ]);
             let newBal = parseFloat(profile.balance || 0);
             let newTO  = parseFloat(profile.remaining_turnover || 0);
@@ -177,12 +177,38 @@ async function processTx(id, uid, type, amount, status) {
                 const turnoverX = parseFloat(sets.turnover_multiplier || 10);
                 newBal += amount + bonus;
                 newTO  += amount * turnoverX;
+
+                // ── Commission to referrer ──
+                if (profile.referrer_id && sets.commission_enabled) {
+                    const commRate = parseFloat(sets.commission_rate || 0);
+                    if (commRate > 0) {
+                        const commAmt = amount * (commRate / 100);
+                        try {
+                            const { data: referrer } = await db.from('users')
+                                .select('balance').eq('id', profile.referrer_id).single();
+                            const newRefBal = parseFloat(referrer?.balance || 0) + commAmt;
+                            await Promise.all([
+                                db.from('users').update({ balance: newRefBal }).eq('id', profile.referrer_id),
+                                db.from('commissions').insert({
+                                    agent_id:       profile.referrer_id,
+                                    user_id:        uid,
+                                    transaction_id: id,
+                                    amount:         commAmt,
+                                    percentage:     commRate,
+                                    level:          1,
+                                    type:           'deposit',
+                                    created_at:     new Date().toISOString()
+                                })
+                            ]);
+                        } catch(ce) { console.warn('Commission error:', ce); }
+                    }
+                }
+
             } else if (type === 'withdrawal') {
                 newBal -= amount;
             }
 
             await db.from('users').update({ balance: newBal, remaining_turnover: newTO }).eq('id', uid);
-            // Save the actual approved amount back to transaction
             await db.from('transactions').update({ status, amount }).eq('id', id);
         } else {
             await db.from('transactions').update({ status }).eq('id', id);
