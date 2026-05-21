@@ -96,7 +96,9 @@ async function openUserModal(uid) {
             db.from('users').select('id,fullname,phone,ref_code,created_at,balance,is_banned')
                 .eq('referrer_id', uid).order('created_at', { ascending: false }),
             user.referrer_id
-                ? db.from('users').select('fullname,phone,ref_code').eq('id', user.referrer_id).single()
+                ? (user.referrer_id.length < 20
+                    ? db.from('users').select('fullname,phone,ref_code').eq('ref_code', user.referrer_id).single()
+                    : db.from('users').select('fullname,phone,ref_code').eq('id', user.referrer_id).single())
                 : Promise.resolve({ data: null }),
             fetchTxSummary(uid)
         ]);
