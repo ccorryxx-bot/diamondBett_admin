@@ -2,11 +2,10 @@ async function loadAgents() {
     const container = document.getElementById('tab-agents');
     if (!container) return;
 
-    // Load commission rate real-time + agents + history in parallel
     try {
         const [{ data: sets }, { data: allUsers }, { data: commHistory }] = await Promise.all([
             db.from('site_settings').select('commission_rate,commission_enabled').eq('id',1).single(),
-            db.from('users').select('id,fullname,phone,ref_code,balance,role,created_at').order('created_at',{ascending:false}),
+            db.from('users').select('id,fullname,phone,ref_code,balance,role,created_at,total_deposited').order('created_at',{ascending:false}),
             db.from('commissions').select('id,agent_id,user_id,amount,percentage,level,type,created_at')
                 .order('created_at',{ascending:false}).limit(50)
         ]);
@@ -14,44 +13,46 @@ async function loadAgents() {
         const rate    = parseFloat(sets?.commission_rate ?? 5);
         const enabled = sets?.commission_enabled ?? true;
 
-        // Update live rate badge
         const rateEl = document.getElementById('agent-rate-live');
         if (rateEl) {
             rateEl.textContent = rate + '%';
-            rateEl.className = `text-[22px] font-bold ${enabled ? 'text-indigo-600' : 'text-slate-400'}`;
+            rateEl.className   = `text-[22px] font-bold ${enabled ? 'text-indigo-600' : 'text-slate-400'}`;
         }
         const rateInput = document.getElementById('agent-rate-input');
         if (rateInput) rateInput.value = rate;
         const toggleEl = document.getElementById('agent-comm-toggle');
         if (toggleEl) toggleEl.value = enabled.toString();
 
-        // ── BUG FIX ──────────────────────────────────────────────────────────
-        // referrer_id in DB may store ref_code string instead of UUID.
-        // Build a ref_code → UUID lookup so counts resolve correctly.
+        // ── BUG FIX: ref_code → UUID resolver ───────────────────────────────
         const refCodeToId = {};
         allUsers?.forEach(u => { if (u.ref_code) refCodeToId[u.ref_code] = u.id; });
         const resolveRef = (rid) => refCodeToId[rid] || rid;
 
-        // Build agent set using resolved UUIDs
         const referrerIds = new Set(
             allUsers?.map(u => u.referrer_id).filter(Boolean).map(resolveRef) || []
         );
         const agents = allUsers?.filter(u => referrerIds.has(u.id) || u.role === 'agent') || [];
-        // ─────────────────────────────────────────────────────────────────────
+        // ────────────────────────────────────────────────────────────────────
 
-        // Commission totals per agent
-        const commTotals = {};
+        // Commission totals per agent — split this month vs all-time
+        const thisMonthStart = new Date(); thisMonthStart.setDate(1); thisMonthStart.setHours(0,0,0,0);
+        const commTotals    = {};
+        const commThisMonth = {};
         commHistory?.forEach(c => {
-            if (!commTotals[c.agent_id]) commTotals[c.agent_id] = 0;
-            commTotals[c.agent_id] += parseFloat(c.amount || 0);
+            commTotals[c.agent_id]    = (commTotals[c.agent_id]    || 0) + parseFloat(c.amount || 0);
+            if (new Date(c.created_at) >= thisMonthStart)
+                commThisMonth[c.agent_id] = (commThisMonth[c.agent_id] || 0) + parseFloat(c.amount || 0);
         });
 
-        // Subordinate count per agent — resolve ref_code to UUID before tallying
-        const subCounts = {};
+        // Sub counts + this-month new referrals (resolved UUIDs)
+        const subCounts  = {};
+        const newThisMonth = {};
         allUsers?.forEach(u => {
             if (u.referrer_id) {
                 const agentUUID = resolveRef(u.referrer_id);
                 subCounts[agentUUID] = (subCounts[agentUUID] || 0) + 1;
+                if (new Date(u.created_at) >= thisMonthStart)
+                    newThisMonth[agentUUID] = (newThisMonth[agentUUID] || 0) + 1;
             }
         });
 
@@ -62,31 +63,51 @@ async function loadAgents() {
                 agentList.innerHTML = `<p class="text-[11px] text-slate-400 text-center py-4">Agent မရှိသေးပါ</p>`;
             } else {
                 agentList.innerHTML = agents.map(a => {
-                    const name     = a.fullname || a.phone || 'Unknown';
-                    const subs     = subCounts[a.id] || 0;
-                    const earned   = commTotals[a.id] || 0;
-                    const bal      = parseFloat(a.balance || 0);
-                    return `<div class="bg-white border border-slate-200 rounded-xl p-3 shadow-sm">
-                        <div class="flex items-start justify-between mb-2">
+                    const name       = a.fullname || a.phone || 'Unknown';
+                    const subs       = subCounts[a.id]    || 0;
+                    const earned     = commTotals[a.id]   || 0;
+                    const thisM      = commThisMonth[a.id]|| 0;
+                    const newRefs    = newThisMonth[a.id] || 0;
+                    const bal        = parseFloat(a.balance || 0);
+                    const refLink    = `${window.location.origin}?ref=${a.ref_code}`;
+
+                    return `<div class="card" style="will-change:transform;contain:content;">
+                        <div class="flex items-start justify-between mb-3">
                             <div>
-                                <p class="font-bold text-slate-800 text-[13px]">${name}</p>
-                                <p class="text-[9px] text-indigo-500 font-mono mt-0.5">${a.ref_code || a.phone || '-'}</p>
+                                <p class="font-bold text-[14px]">${name}</p>
+                                <p class="text-[9px] font-mono mt-0.5" style="color:var(--purple-bright)">${a.ref_code || '-'}</p>
                             </div>
                             <span class="badge badge-agent">Agent</span>
                         </div>
-                        <div class="grid grid-cols-3 gap-1.5 text-center">
-                            <div class="bg-slate-50 rounded-lg p-2 border border-slate-100">
-                                <p class="text-[8px] text-slate-400 mb-0.5">လက်အောက်သား</p>
-                                <p class="text-[13px] font-bold text-sky-600">${subs}</p>
+
+                        <!-- Stats grid -->
+                        <div class="grid grid-cols-2 gap-2 mb-3">
+                            <div class="rounded-lg p-2 text-center" style="background:var(--cyan-dim);border:1px solid var(--border-c)">
+                                <p class="text-[8px] mb-0.5" style="color:var(--text-dim)">လက်အောက်သား</p>
+                                <p class="text-[15px] font-bold" style="color:var(--cyan)">${subs}</p>
+                                ${newRefs > 0 ? `<p class="text-[8px] text-emerald-400">+${newRefs} ဒီလ</p>` : ''}
                             </div>
-                            <div class="bg-emerald-50 rounded-lg p-2 border border-emerald-100">
-                                <p class="text-[8px] text-emerald-600 mb-0.5">Commission</p>
-                                <p class="text-[12px] font-bold text-emerald-700">${earned.toLocaleString()} K</p>
+                            <div class="rounded-lg p-2 text-center" style="background:var(--purple-dim);border:1px solid var(--border-p)">
+                                <p class="text-[8px] mb-0.5" style="color:var(--text-dim)">ကျန်ငွေ</p>
+                                <p class="text-[13px] font-bold" style="color:var(--purple-bright)">${bal.toLocaleString()} K</p>
                             </div>
-                            <div class="bg-indigo-50 rounded-lg p-2 border border-indigo-100">
-                                <p class="text-[8px] text-indigo-500 mb-0.5">ကျန်ငွေ</p>
-                                <p class="text-[12px] font-bold text-indigo-700">${bal.toLocaleString()} K</p>
+                            <div class="rounded-lg p-2 text-center" style="background:rgba(0,255,179,0.08);border:1px solid rgba(0,255,179,0.25)">
+                                <p class="text-[8px] text-emerald-500 mb-0.5">ဒီလ Commission</p>
+                                <p class="text-[13px] font-bold text-emerald-400">${thisM.toLocaleString()} K</p>
                             </div>
+                            <div class="rounded-lg p-2 text-center" style="background:rgba(0,255,179,0.05);border:1px solid rgba(0,255,179,0.15)">
+                                <p class="text-[8px] text-emerald-500/70 mb-0.5">စုစုပေါင်း Commission</p>
+                                <p class="text-[11px] font-bold text-emerald-500">${earned.toLocaleString()} K</p>
+                            </div>
+                        </div>
+
+                        <!-- Referral link -->
+                        <div class="rounded-lg p-2 flex items-center gap-2" style="background:rgba(0,229,255,0.06);border:1px solid var(--border-c)">
+                            <p class="text-[9px] font-mono truncate flex-1" style="color:var(--text-secondary)">${refLink}</p>
+                            <button onclick="copyRefLink('${refLink}')"
+                                class="compact-btn btn-ghost text-[9px] flex-shrink-0 px-2 py-1">
+                                <i class="fa-solid fa-copy mr-1"></i>Copy
+                            </button>
                         </div>
                     </div>`;
                 }).join('');
@@ -103,24 +124,26 @@ async function loadAgents() {
                 allUsers?.forEach(u => { agentMap[u.id] = u.fullname || u.phone; });
                 histEl.innerHTML = commHistory.map(c => {
                     const agentName = agentMap[c.agent_id] || c.agent_id?.substring(0,8) || '-';
-                    const dt = new Date(c.created_at).toLocaleString('en-GB', {dateStyle:'short',timeStyle:'short'});
-                    return `<div class="flex items-center justify-between py-2 border-b border-slate-50 last:border-0">
+                    const dt = new Date(c.created_at).toLocaleString('en-GB',{dateStyle:'short',timeStyle:'short'});
+                    return `<div class="flex items-center justify-between py-2" style="border-bottom:1px solid rgba(157,78,221,0.1)">
                         <div>
-                            <p class="text-[11px] font-semibold text-slate-800">${agentName}</p>
-                            <p class="text-[9px] text-slate-400">${c.type || 'deposit'} · Lv${c.level||1} · ${dt}</p>
+                            <p class="text-[11px] font-semibold">${agentName}</p>
+                            <p class="text-[9px]" style="color:var(--text-dim)">${c.type||'deposit'} · Lv${c.level||1} · ${dt}</p>
                         </div>
                         <div class="text-right">
-                            <p class="text-[12px] font-bold text-emerald-600">+${parseFloat(c.amount||0).toLocaleString()} K</p>
-                            <p class="text-[9px] text-slate-400">${parseFloat(c.percentage||0)}%</p>
+                            <p class="text-[12px] font-bold text-emerald-400">+${parseFloat(c.amount||0).toLocaleString()} K</p>
+                            <p class="text-[9px]" style="color:var(--text-dim)">${parseFloat(c.percentage||0)}%</p>
                         </div>
                     </div>`;
                 }).join('');
             }
         }
 
-    } catch(e) {
-        console.error('loadAgents:', e);
-    }
+    } catch(e) { console.error('loadAgents:', e); }
+}
+
+function copyRefLink(link) {
+    navigator.clipboard.writeText(link).then(() => showToast('Referral Link copied!', 'success'));
 }
 
 async function saveCommissionRate() {
