@@ -73,6 +73,15 @@
       <link rel="stylesheet" href="css/styles.css">
   </head>
 <body class="flex flex-col h-screen overflow-hidden" style="background-color:#07070f">
+    <script>if(!sessionStorage.getItem("db_auth")){window.location.href="login.html";}</script>
+    <!-- Security: disable right-click/copy/long-press -->
+    <script>
+    document.addEventListener("contextmenu",e=>e.preventDefault());
+    document.addEventListener("copy",e=>e.preventDefault());
+    document.addEventListener("cut",e=>e.preventDefault());
+    document.addEventListener("selectstart",e=>{if(e.target.tagName!=="INPUT"&&e.target.tagName!=="TEXTAREA")e.preventDefault();});
+    document.addEventListener("touchstart",e=>{if(e.touches.length>1)e.preventDefault();},{passive:false});
+    </script>
 
     <!-- Toast -->
     <div id="toast"></div>
@@ -174,6 +183,15 @@
         </button>
         <button onclick="switchTab('settings')" id="btn-settings" class="nav-btn">
             <i class="fa-solid fa-gears"></i> ဆက်တင်
+        </button>
+        <button onclick="switchTab('banners')" id="btn-banners" class="nav-btn">
+            <i class="fa-solid fa-image"></i> Banner
+        </button>
+        <button onclick="switchTab('games')" id="btn-games" class="nav-btn">
+            <i class="fa-solid fa-gamepad"></i> Games
+        </button>
+        <button onclick="switchTab('wheel')" id="btn-wheel" class="nav-btn">
+            <i class="fa-solid fa-dharmachakra"></i> Wheel
         </button>
     </nav>
 
@@ -470,6 +488,106 @@
                     <p class="text-[11px] text-slate-400 animate-pulse text-center py-2">တင်နေသည်...</p>
                 </div>
             </div>
+            <!-- Affiliate Config -->
+            <div class="card space-y-3">
+                <h4 class="text-[11px] font-bold uppercase pb-2" style="color:var(--purple-bright);border-bottom:1px solid var(--border-p)">
+                    <i class="fa-solid fa-sitemap mr-1"></i> Affiliate Commission Levels
+                </h4>
+                <div id="affiliate-config-list" class="space-y-2">
+                    <div class="skeleton h-12 rounded-xl"></div>
+                    <div class="skeleton h-12 rounded-xl"></div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- ===== Banner Tab ===== -->
+        <div id="tab-banners" class="tab-content hidden space-y-3">
+            <div class="card space-y-3">
+                <h4 class="text-[11px] font-bold uppercase pb-2" style="color:var(--cyan);border-bottom:1px solid var(--border-p)">
+                    <i class="fa-solid fa-image mr-1"></i> Banner ထည့်မည်
+                </h4>
+                <div class="space-y-2">
+                    <div>
+                        <label class="text-[9px] block mb-0.5" style="color:var(--text-dim)">Banner Image URL</label>
+                        <input type="text" id="banner-url-input" placeholder="https://...image.jpg"
+                            class="w-full px-3 py-2 rounded-lg text-[11px]">
+                    </div>
+                    <div>
+                        <label class="text-[9px] block mb-0.5" style="color:var(--text-dim)">Title (optional)</label>
+                        <input type="text" id="banner-title-input" placeholder="Banner အမည်..."
+                            class="w-full px-3 py-2 rounded-lg text-[11px]">
+                    </div>
+                    <button onclick="uploadBannerFromUrl()" class="compact-btn btn-primary w-full py-2">
+                        <i class="fa-solid fa-plus mr-1"></i> Banner ထည့်မည်
+                    </button>
+                </div>
+            </div>
+            <div class="card space-y-3">
+                <p class="section-title">Banner များ (<span id="banner-count">-</span>)</p>
+                <div id="banner-list" class="space-y-2"></div>
+            </div>
+        </div>
+
+        <!-- ===== Games Tab ===== -->
+        <div id="tab-games" class="tab-content hidden space-y-3">
+            <!-- Add new game -->
+            <div class="card space-y-3">
+                <h4 class="text-[11px] font-bold uppercase pb-2" style="color:var(--cyan);border-bottom:1px solid var(--border-p)">
+                    <i class="fa-solid fa-plus mr-1"></i> Game အသစ် ထည့်မည်
+                </h4>
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="col-span-2">
+                        <label class="text-[9px] block mb-0.5" style="color:var(--text-dim)">Game အမည်</label>
+                        <input type="text" id="new-gc-name" placeholder="Gate of Olympus"
+                            class="w-full px-2 py-1.5 rounded-lg text-[11px]">
+                    </div>
+                    <div>
+                        <label class="text-[9px] block mb-0.5" style="color:var(--text-dim)">Image URL</label>
+                        <input type="text" id="new-gc-img" placeholder="https://..."
+                            class="w-full px-2 py-1.5 rounded-lg text-[11px]">
+                    </div>
+                    <div>
+                        <label class="text-[9px] block mb-0.5" style="color:var(--text-dim)">Category</label>
+                        <select id="new-gc-cat" class="w-full px-2 py-1.5 rounded-lg text-[11px]">
+                            <option value="show">show</option>
+                            <option value="slots">slots</option>
+                            <option value="live">live</option>
+                            <option value="fishing">fishing</option>
+                            <option value="table">table</option>
+                        </select>
+                    </div>
+                    <div class="col-span-2">
+                        <label class="text-[9px] block mb-0.5" style="color:var(--text-dim)">Game Code (optional)</label>
+                        <input type="text" id="new-gc-code" placeholder="auto-generated if empty"
+                            class="w-full px-2 py-1.5 rounded-lg text-[11px]">
+                    </div>
+                </div>
+                <button onclick="addGameCard()" class="compact-btn btn-primary w-full py-2">
+                    <i class="fa-solid fa-plus mr-1"></i> Game ထည့်မည်
+                </button>
+            </div>
+            <!-- Filter + list -->
+            <div id="game-cat-bar" class="filter-bar"></div>
+            <div id="game-cards-list" class="grid grid-cols-2 gap-2"></div>
+        </div>
+
+        <!-- ===== Lucky Wheel Tab ===== -->
+        <div id="tab-wheel" class="tab-content hidden space-y-3">
+            <!-- Stats -->
+            <div class="card" id="wheel-stats"></div>
+            <!-- Slot config -->
+            <div class="card space-y-3">
+                <h4 class="text-[11px] font-bold uppercase pb-2" style="color:var(--purple-bright);border-bottom:1px solid var(--border-p)">
+                    <i class="fa-solid fa-sliders mr-1"></i> Wheel Slot Config
+                </h4>
+                <div id="wheel-slots-list"></div>
+            </div>
+            <!-- History -->
+            <div class="card space-y-2">
+                <p class="section-title">Spin မှတ်တမ်း</p>
+                <div id="wheel-history-list"></div>
+            </div>
         </div>
 
     </main>
@@ -481,5 +599,9 @@
     <script src="js/agents.js"></script>
     <script src="js/settings.js"></script>
     <script src="js/app.js"></script>
+    <script src="js/banners.js"></script>
+    <script src="js/games.js"></script>
+    <script src="js/wheel.js"></script>
+    <script src="js/affiliate.js"></script>
 </body>
 </html>
