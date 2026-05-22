@@ -1,21 +1,31 @@
+// ═══════════════════════════════════════════════════════
+//  GAMES  —  Supabase Storage upload + provider_url + CRUD
+// ═══════════════════════════════════════════════════════
+const GAME_BUCKET = 'game-cards';
+
+let allGameCards  = [];
+let gameCatFilter = 'all';
+
 async function loadGames() {
     const el = document.getElementById('game-cards-list');
     if (!el) return;
-    el.innerHTML = `<div class="col-span-2 text-center py-4 text-[11px] animate-pulse" style="color:var(--text-dim)">တင်နေသည်...</div>`;
+    el.innerHTML = `<div class="game-grid">${Array(4).fill('<div class="skeleton h-32 rounded-xl"></div>').join('')}</div>`;
     try {
         const { data, error } = await db.from('game_cards')
             .select('*').order('created_at', { ascending: false });
         if (error) throw error;
-        renderGameCards(data || []);
-        updateGameCategoryFilter(data || []);
-    } catch(e) { el.innerHTML = `<p class="text-rose-400 text-[11px] p-2 col-span-2">${e.message}</p>`; }
+        allGameCards = data || [];
+        updateGameCategoryFilter(allGameCards);
+        renderGameCards(gameCatFilter === 'all' ? allGameCards :
+            allGameCards.filter(c => c.category === gameCatFilter));
+        const cnt = document.getElementById('game-count');
+        if (cnt) cnt.textContent = allGameCards.length;
+    } catch(e) {
+        el.innerHTML = `<p class="text-rose-400 text-[11px] p-2">⚠ ${e.message}</p>`;
+    }
 }
 
-let allGameCards = [];
-let gameCatFilter = 'all';
-
 function updateGameCategoryFilter(cards) {
-    allGameCards = cards;
     const cats = ['all', ...new Set(cards.map(c => c.category).filter(Boolean))];
     const bar  = document.getElementById('game-cat-bar');
     if (!bar) return;
@@ -35,50 +45,169 @@ function renderGameCards(cards) {
     const el = document.getElementById('game-cards-list');
     if (!el) return;
     if (!cards.length) {
-        el.innerHTML = `<p class="col-span-2 text-center py-4 text-[11px]" style="color:var(--text-dim)">Game မရှိသေးပါ</p>`;
+        el.innerHTML = `<p class="text-center py-8 text-[11px]" style="color:var(--text-dim)">Game မရှိသေးပါ</p>`;
         return;
     }
-    el.innerHTML = cards.map(g => `
-        <div class="rounded-xl overflow-hidden border" style="border-color:var(--border-p);background:var(--bg-card)">
+    el.innerHTML = `<div class="game-grid">${cards.map(g => `
+        <div class="game-card-item">
             <div style="position:relative">
                 <img src="${g.image_url||''}" alt="${g.game_name||''}"
-                    class="w-full object-cover" style="height:90px"
-                    onerror="this.src='https://placehold.co/200x90/0e0e1c/9d4edd?text=Game'">
-                <span class="badge" style="position:absolute;top:5px;right:5px;background:rgba(0,0,0,0.7);color:var(--cyan);border:1px solid var(--border-c)">
-                    ${g.category||'?'}
-                </span>
+                    style="width:100%;height:90px;object-fit:cover;display:block"
+                    onerror="this.src='https://placehold.co/200x90/000000/9d4edd?text=Game'">
+                <span style="position:absolute;top:4px;right:4px;padding:2px 6px;border-radius:4px;
+                    background:rgba(0,0,0,0.75);color:var(--cyan);font-size:8px;font-weight:800;
+                    border:1px solid var(--border-c)">${g.category||'?'}</span>
             </div>
             <div class="p-2 space-y-1.5">
-                <p class="text-[11px] font-bold truncate" style="color:var(--text-primary)">${g.game_name||'Unnamed'}</p>
-                <p class="text-[9px] font-mono truncate" style="color:var(--text-dim)">${g.game_code||''}</p>
-                <div class="flex gap-1.5">
-                    <button onclick="editGameCard('${g.id}')"
-                        class="compact-btn btn-ghost flex-1 py-1 text-[9px]">
-                        <i class="fa-solid fa-pen"></i> Edit
+                <p class="font-bold truncate" style="font-size:11px;color:var(--text-primary)">${g.game_name||'Unnamed'}</p>
+                ${g.provider_url ? `<p class="truncate" style="font-size:8px;color:var(--text-dim)">🔗 ${g.provider_url.replace(/^https?:\/\//,'').slice(0,28)}...</p>` : ''}
+                <div class="flex gap-1">
+                    <button onclick="openEditGameModal('${g.id}')"
+                        class="compact-btn btn-ghost flex-1 text-[10px]" style="min-height:28px;padding:5px 6px">
+                        <i class="fa-solid fa-pen"></i>
                     </button>
                     <button onclick="deleteGameCard('${g.id}','${(g.game_name||'').replace(/'/g,'')}')"
-                        class="compact-btn btn-danger px-2 py-1 text-[9px]">
+                        class="compact-btn btn-danger text-[10px]" style="min-height:28px;padding:5px 8px">
                         <i class="fa-solid fa-trash"></i>
                     </button>
                 </div>
             </div>
-        </div>`).join('');
+        </div>`).join('')}</div>`;
 }
 
-function editGameCard(id) {
-    const card = allGameCards.find(c => c.id == id);
-    if (!card) return;
-    const nameEl = document.getElementById(`gc-name-edit-${id}`);
-    // Simple inline edit using prompt
-    const newName = prompt('Game အမည် ပြောင်းမည်:', card.game_name || '');
-    if (newName === null) return;
-    const newCat = prompt('Category (show/slots/live/...):', card.category || '');
-    if (newCat === null) return;
-    db.from('game_cards').update({ game_name: newName.trim(), category: newCat.trim() }).eq('id', id)
-        .then(({ error }) => {
-            if (error) showToast('မအောင်မြင်ပါ: ' + error.message, 'error');
-            else { showToast(`${newName} ပြောင်းပြီ ✅`, 'success'); loadGames(); }
+// ── File Upload ────────────────────────────────────────
+let gameFileToUpload = null;
+
+function onGameFileChange(input) {
+    const file = input.files[0];
+    if (!file) return;
+    gameFileToUpload = file;
+    const preview = document.getElementById('game-preview');
+    if (preview) { preview.src = URL.createObjectURL(file); preview.style.display = 'block'; }
+    const label = document.getElementById('game-upload-label');
+    if (label) label.textContent = '📎 ' + file.name;
+}
+
+async function addGameCard() {
+    const name    = document.getElementById('new-gc-name')?.value?.trim();
+    const cat     = document.getElementById('new-gc-cat')?.value?.trim() || 'slots';
+    const code    = document.getElementById('new-gc-code')?.value?.trim() || 'game_' + Date.now();
+    const provUrl = document.getElementById('new-gc-url')?.value?.trim() || '';
+
+    if (!name) { showToast('Game အမည် ထည့်ပါ', 'error'); return; }
+    if (!gameFileToUpload) { showToast('Image ရွေးပါ', 'error'); return; }
+
+    const btn = document.getElementById('add-game-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'တင်နေသည်...'; }
+
+    try {
+        // Upload image to Supabase Storage
+        const ext      = gameFileToUpload.name.split('.').pop();
+        const fileName = `game_${Date.now()}.${ext}`;
+        const { data: upData, error: upErr } = await db.storage
+            .from(GAME_BUCKET).upload(fileName, gameFileToUpload, { cacheControl: '3600', upsert: false });
+        if (upErr) throw upErr;
+
+        const { data: urlData } = db.storage.from(GAME_BUCKET).getPublicUrl(fileName);
+
+        const { error } = await db.from('game_cards').insert({
+            game_name: name, image_url: urlData.publicUrl,
+            category: cat, game_code: code, provider_url: provUrl,
+            created_at: new Date().toISOString()
         });
+        if (error) throw error;
+
+        showToast(`${name} ထည့်ပြီ ✅`, 'success');
+        ['new-gc-name','new-gc-code','new-gc-url'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+        });
+        gameFileToUpload = null;
+        const p = document.getElementById('game-preview');
+        if (p) { p.style.display='none'; p.src=''; }
+        const l = document.getElementById('game-upload-label');
+        if (l) l.textContent = '📁 Image ရွေးချယ်ပါ';
+        const fi = document.getElementById('game-file-input');
+        if (fi) fi.value = '';
+        loadGames();
+    } catch(e) {
+        showToast('မအောင်မြင်ပါ: ' + e.message, 'error');
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Game ထည့်မည်'; }
+    }
+}
+
+// ── Edit Modal ────────────────────────────────────────
+let editingGameId = null;
+
+function openEditGameModal(id) {
+    const card = allGameCards.find(c => String(c.id) === String(id));
+    if (!card) return;
+    editingGameId = id;
+    const m = document.getElementById('edit-game-modal');
+    if (!m) return;
+    document.getElementById('eg-name').value     = card.game_name   || '';
+    document.getElementById('eg-cat').value      = card.category    || 'slots';
+    document.getElementById('eg-code').value     = card.game_code   || '';
+    document.getElementById('eg-url').value      = card.provider_url|| '';
+    document.getElementById('eg-img-prev').src   = card.image_url   || '';
+    document.getElementById('eg-img-prev').style.display = card.image_url ? 'block' : 'none';
+    m.style.display = 'flex';
+}
+function closeEditGameModal() {
+    const m = document.getElementById('edit-game-modal');
+    if (m) m.style.display = 'none';
+    editingGameId = null;
+}
+
+let editGameFile = null;
+function onEditGameFile(input) {
+    editGameFile = input.files[0];
+    if (!editGameFile) return;
+    const p = document.getElementById('eg-img-prev');
+    if (p) { p.src = URL.createObjectURL(editGameFile); p.style.display = 'block'; }
+}
+
+async function saveEditGame() {
+    if (!editingGameId) return;
+    const name    = document.getElementById('eg-name')?.value?.trim();
+    const cat     = document.getElementById('eg-cat')?.value?.trim() || 'slots';
+    const code    = document.getElementById('eg-code')?.value?.trim() || '';
+    const provUrl = document.getElementById('eg-url')?.value?.trim() || '';
+    if (!name) { showToast('Game အမည် ထည့်ပါ','error'); return; }
+
+    const btn = document.getElementById('eg-save-btn');
+    if (btn) { btn.disabled=true; btn.textContent='သိမ်းနေသည်...'; }
+
+    try {
+        let imageUrl = allGameCards.find(c=>String(c.id)===String(editingGameId))?.image_url || '';
+
+        // Upload new image if selected
+        if (editGameFile) {
+            const ext      = editGameFile.name.split('.').pop();
+            const fileName = `game_${Date.now()}.${ext}`;
+            const { error: upErr } = await db.storage.from(GAME_BUCKET)
+                .upload(fileName, editGameFile, { cacheControl:'3600', upsert:false });
+            if (upErr) throw upErr;
+            const { data: urlData } = db.storage.from(GAME_BUCKET).getPublicUrl(fileName);
+            imageUrl = urlData.publicUrl;
+            editGameFile = null;
+        }
+
+        const { error } = await db.from('game_cards').update({
+            game_name: name, category: cat,
+            game_code: code, provider_url: provUrl, image_url: imageUrl
+        }).eq('id', editingGameId);
+        if (error) throw error;
+
+        showToast(`${name} ပြောင်းပြီ ✅`, 'success');
+        closeEditGameModal();
+        loadGames();
+    } catch(e) {
+        showToast('မအောင်မြင်ပါ: ' + e.message, 'error');
+    } finally {
+        if (btn) { btn.disabled=false; btn.textContent='သိမ်းမည်'; }
+    }
 }
 
 async function deleteGameCard(id, name) {
@@ -91,24 +220,13 @@ async function deleteGameCard(id, name) {
     } catch(e) { showToast('မအောင်မြင်ပါ: ' + e.message, 'error'); }
 }
 
-async function addGameCard() {
-    const name   = document.getElementById('new-gc-name')?.value?.trim();
-    const imgUrl = document.getElementById('new-gc-img')?.value?.trim();
-    const cat    = document.getElementById('new-gc-cat')?.value?.trim() || 'slots';
-    const code   = document.getElementById('new-gc-code')?.value?.trim() ||
-                   'game_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
-    if (!name || !imgUrl) { showToast('Game အမည် နဲ့ Image URL ထည့်ပါ', 'error'); return; }
-    try {
-        const { error } = await db.from('game_cards').insert({
-            game_name: name, image_url: imgUrl, category: cat,
-            game_code: code, created_at: new Date().toISOString()
-        });
-        if (error) throw error;
-        showToast(`${name} ထည့်ပြီ ✅`, 'success');
-        ['new-gc-name','new-gc-img','new-gc-code'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.value = '';
-        });
-        loadGames();
-    } catch(e) { showToast('မအောင်မြင်ပါ: ' + e.message, 'error'); }
+// ── Panel open/close ────────────────────────────────────
+function openGamesPanel() {
+    closeSidebar();
+    const p = document.getElementById('panel-games');
+    if (p) { p.classList.add('open'); loadGames(); }
+}
+function closeGamesPanel() {
+    const p = document.getElementById('panel-games');
+    if (p) p.classList.remove('open');
 }
