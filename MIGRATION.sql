@@ -1,115 +1,118 @@
 -- ============================================================
--- DiamondBett Admin — DB Migration  (v2 — RLS Fix included)
--- Supabase Dashboard > SQL Editor မှာ ဒါကို Run ပါ
--- Schema Cache refresh: Settings > API > Reload Schema
+--  DiamondBett Admin — DB Migration  v3
+--  Supabase Dashboard > SQL Editor မှာ Run ပါ
 -- ============================================================
 
--- ============================================================
--- STEP 1 — Column additions (ADD COLUMN IF NOT EXISTS = safe)
--- ============================================================
+-- ── STEP 1: existing columns (safe ADD IF NOT EXISTS) ──────
 
--- 1a. transactions: admin tracking columns
 ALTER TABLE transactions
   ADD COLUMN IF NOT EXISTS processed_at     timestamptz,
   ADD COLUMN IF NOT EXISTS processed_by     text,
   ADD COLUMN IF NOT EXISTS original_amount  numeric;
 
--- 1b. commissions: transaction_id link
 ALTER TABLE commissions
   ADD COLUMN IF NOT EXISTS transaction_id   uuid;
 
--- 1c. users: login tracking + lifetime stats
 ALTER TABLE users
   ADD COLUMN IF NOT EXISTS last_login_at    timestamptz,
   ADD COLUMN IF NOT EXISTS total_deposited  numeric DEFAULT 0,
   ADD COLUMN IF NOT EXISTS total_withdrawn  numeric DEFAULT 0;
 
--- 1d. site_settings: maintenance + announcement + deposit limits
 ALTER TABLE site_settings
   ADD COLUMN IF NOT EXISTS maintenance_mode     boolean DEFAULT false,
   ADD COLUMN IF NOT EXISTS site_announcement    text    DEFAULT '',
   ADD COLUMN IF NOT EXISTS min_deposit          numeric DEFAULT 5000,
   ADD COLUMN IF NOT EXISTS max_daily_withdrawal numeric DEFAULT 500000;
 
--- 1e. bonus_codes: remove duplicate count column
-ALTER TABLE bonus_codes DROP COLUMN IF EXISTS used_count;
-
--- 1f. user_bonus_claims: turnover tracking
 ALTER TABLE user_bonus_claims
   ADD COLUMN IF NOT EXISTS turnover_added  numeric DEFAULT 0;
 
--- 1g. payment_methods: limits + ordering
 ALTER TABLE payment_methods
   ADD COLUMN IF NOT EXISTS min_amount      numeric DEFAULT 5000,
   ADD COLUMN IF NOT EXISTS max_amount      numeric DEFAULT 5000000,
   ADD COLUMN IF NOT EXISTS display_order   int     DEFAULT 0;
 
--- ============================================================
--- STEP 2 — RLS (Row Level Security) Fix
--- ★ ဒါမပါရင် Commission insert ၊ Transaction update တွေ FAIL ဖြစ်မည် ★
--- ============================================================
+-- ── STEP 2: game_cards — provider_url (NEW in v3) ──────────
+ALTER TABLE game_cards
+  ADD COLUMN IF NOT EXISTS provider_url TEXT DEFAULT '';
 
--- 2a. commissions — anon key နဲ့ insert/update ခွင့်ပြု
+-- ── STEP 3: banners table ──────────────────────────────────
+CREATE TABLE IF NOT EXISTS banners (
+  id          BIGSERIAL PRIMARY KEY,
+  image_url   TEXT NOT NULL,
+  title       TEXT DEFAULT '',
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ── STEP 4: wheel_config extra columns ────────────────────
+ALTER TABLE wheel_config
+  ADD COLUMN IF NOT EXISTS weight              INTEGER DEFAULT 10;
+ALTER TABLE wheel_config
+  ADD COLUMN IF NOT EXISTS turnover_multiplier NUMERIC DEFAULT 0;
+
+-- ── STEP 5: affiliate_config extra columns ─────────────────
+ALTER TABLE affiliate_config
+  ADD COLUMN IF NOT EXISTS value       NUMERIC DEFAULT 0;
+ALTER TABLE affiliate_config
+  ADD COLUMN IF NOT EXISTS is_active   BOOLEAN DEFAULT true;
+ALTER TABLE affiliate_config
+  ADD COLUMN IF NOT EXISTS description TEXT DEFAULT '';
+
+-- ── STEP 6: RLS policies ───────────────────────────────────
 ALTER TABLE commissions ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "admin_panel_all_commissions" ON commissions;
-CREATE POLICY "admin_panel_all_commissions"
-  ON commissions FOR ALL
-  USING (true)
-  WITH CHECK (true);
+CREATE POLICY "admin_panel_all_commissions" ON commissions FOR ALL USING (true) WITH CHECK (true);
 
--- 2b. transactions — processed_at / processed_by / original_amount update ခွင့်ပြု
 ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "admin_panel_all_transactions" ON transactions;
-CREATE POLICY "admin_panel_all_transactions"
-  ON transactions FOR ALL
-  USING (true)
-  WITH CHECK (true);
+CREATE POLICY "admin_panel_all_transactions" ON transactions FOR ALL USING (true) WITH CHECK (true);
 
--- 2c. users — balance / total_deposited / total_withdrawn update ခွင့်ပြု
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "admin_panel_all_users" ON users;
-CREATE POLICY "admin_panel_all_users"
-  ON users FOR ALL
-  USING (true)
-  WITH CHECK (true);
+CREATE POLICY "admin_panel_all_users" ON users FOR ALL USING (true) WITH CHECK (true);
 
--- 2d. site_settings — maintenance_mode / announcement save ခွင့်ပြု
 ALTER TABLE site_settings ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "admin_panel_all_settings" ON site_settings;
-CREATE POLICY "admin_panel_all_settings"
-  ON site_settings FOR ALL
-  USING (true)
-  WITH CHECK (true);
+CREATE POLICY "admin_panel_all_settings" ON site_settings FOR ALL USING (true) WITH CHECK (true);
 
--- 2e. agents / referrals (ရှိလျှင်)
-DO $$ BEGIN
-  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'agents') THEN
-    ALTER TABLE agents ENABLE ROW LEVEL SECURITY;
-    DROP POLICY IF EXISTS "admin_panel_all_agents" ON agents;
-    CREATE POLICY "admin_panel_all_agents" ON agents FOR ALL USING (true) WITH CHECK (true);
-  END IF;
-  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'referrals') THEN
-    ALTER TABLE referrals ENABLE ROW LEVEL SECURITY;
-    DROP POLICY IF EXISTS "admin_panel_all_referrals" ON referrals;
-    CREATE POLICY "admin_panel_all_referrals" ON referrals FOR ALL USING (true) WITH CHECK (true);
-  END IF;
-END $$;
+ALTER TABLE game_cards ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "admin_panel_all_game_cards" ON game_cards;
+CREATE POLICY "admin_panel_all_game_cards" ON game_cards FOR ALL USING (true) WITH CHECK (true);
 
--- ============================================================
--- STEP 3 — total_deposited / total_withdrawn ပြန်တွက်ချက် (optional)
--- မပြေးလဲ ရသည် — ဒါဆို existing user တွေမှာ 0 ပြနေမည်
--- ============================================================
+ALTER TABLE banners ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "admin_panel_all_banners" ON banners;
+CREATE POLICY "admin_panel_all_banners" ON banners FOR ALL USING (true) WITH CHECK (true);
+
+-- ── STEP 7: Storage buckets ────────────────────────────────
+INSERT INTO storage.buckets (id, name, public)
+  VALUES ('banners', 'banners', true)
+  ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO storage.buckets (id, name, public)
+  VALUES ('game-cards', 'game-cards', true)
+  ON CONFLICT (id) DO NOTHING;
+
+DROP POLICY IF EXISTS "Public read banners"    ON storage.objects;
+DROP POLICY IF EXISTS "Admin upload banners"   ON storage.objects;
+DROP POLICY IF EXISTS "Public read game-cards" ON storage.objects;
+DROP POLICY IF EXISTS "Admin upload game-cards" ON storage.objects;
+
+CREATE POLICY "Public read banners"
+  ON storage.objects FOR SELECT USING (bucket_id = 'banners');
+CREATE POLICY "Admin upload banners"
+  ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'banners');
+CREATE POLICY "Public read game-cards"
+  ON storage.objects FOR SELECT USING (bucket_id = 'game-cards');
+CREATE POLICY "Admin upload game-cards"
+  ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'game-cards');
+
+-- ── STEP 8: recalculate totals ─────────────────────────────
 UPDATE users u SET
   total_deposited = COALESCE((
     SELECT SUM(amount) FROM transactions t
-    WHERE t.user_id = u.id AND t.type = 'deposit' AND t.status = 'approved'
-  ), 0),
+    WHERE t.user_id = u.id AND t.type = 'deposit' AND t.status = 'approved'), 0),
   total_withdrawn = COALESCE((
     SELECT SUM(amount) FROM transactions t
-    WHERE t.user_id = u.id AND t.type = 'withdrawal' AND t.status = 'approved'
-  ), 0);
+    WHERE t.user_id = u.id AND t.type = 'withdrawal' AND t.status = 'approved'), 0);
 
--- ============================================================
--- Done!
--- Run ပြီးရင်: Supabase > Settings > API > "Reload Schema" နှိပ်ပါ
--- ============================================================
+SELECT 'Migration v3 complete ✅' AS status;
