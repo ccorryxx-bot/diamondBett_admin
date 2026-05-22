@@ -188,7 +188,53 @@ function updateFinanceBadge(count) {
 
 function startPolling() {
     pollPendingRequests();                   // immediate first check
-    _pollTimer = setInterval(pollPendingRequests, 30000); // every 30 sec
+    // If Realtime is active, we can poll less frequently (every 60s) as a fallback
+    if (_pollTimer) clearInterval(_pollTimer);
+    _pollTimer = setInterval(pollPendingRequests, 60000); 
+}
+
+// ===== REALTIME SUBSCRIPTIONS =====
+function setupRealtimeSubscriptions() {
+    // Listen for transaction changes (deposits/withdrawals)
+    db.channel('public:transactions')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, payload => {
+        console.log('Realtime Transaction Update:', payload);
+        // Refresh sidebar and stats for any transaction change
+        loadSidebarData();
+        loadStats();
+        
+        // If we're on the finance tab, refresh it too
+        const financeTab = document.getElementById('tab-finance');
+        if (financeTab && !financeTab.classList.contains('hidden')) {
+            loadFinance();
+        }
+
+        // Handle new pending requests for notification sound/toast
+        if (payload.eventType === 'INSERT' && payload.new.status === 'pending') {
+            playNotificationSound(payload.new.type || 'deposit');
+            showToast(
+                `⚡ တောင်းဆိုမှုအသစ်ရောက်သည်! (${payload.new.type === 'deposit' ? 'ငွေသွင်း' : 'ငွေထုတ်'})`,
+                'success'
+            );
+        }
+      })
+      .subscribe();
+
+    // Listen for user changes (balance updates/new users)
+    db.channel('public:users')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, payload => {
+        console.log('Realtime User Update:', payload);
+        loadStats(); // Update dashboard counts
+        
+        // Refresh users tab if visible
+        const usersTab = document.getElementById('tab-users');
+        if (usersTab && !usersTab.classList.contains('hidden')) {
+            loadUsers();
+        }
+      })
+      .subscribe();
+      
+    console.log('Supabase Realtime subscriptions active.');
 }
 
 // ===== INIT =====
@@ -198,5 +244,10 @@ window.onload = () => {
     document.addEventListener('click', () => {
         if (_audioCtx && _audioCtx.state === 'suspended') _audioCtx.resume();
     }, { once: true });
+    
+    // Start Realtime instead of just polling
+    setupRealtimeSubscriptions();
+    
+    // We can keep polling as a fallback every 60 seconds instead of 30
     startPolling();
 };
