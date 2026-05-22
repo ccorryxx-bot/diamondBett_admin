@@ -1,55 +1,111 @@
+// ═══════════════════════════════════════════════════════
+//  BANNERS  —  Supabase Storage upload + CRUD
+// ═══════════════════════════════════════════════════════
+const BANNER_BUCKET = 'banners';
+
 async function loadBanners() {
     const el = document.getElementById('banner-list');
     if (!el) return;
-    el.innerHTML = `<div class="text-center py-4 text-[11px] animate-pulse" style="color:var(--text-dim)">တင်နေသည်...</div>`;
+    el.innerHTML = skeletonRows(3, 'h-28');
     try {
         const { data, error } = await db.from('banners').select('*').order('created_at', { ascending: false });
         if (error) throw error;
         renderBanners(data || []);
-    } catch(e) { el.innerHTML = `<p class="text-rose-400 text-[11px] p-2">${e.message}</p>`; }
+        const cnt = document.getElementById('banner-count');
+        if (cnt) cnt.textContent = (data || []).length;
+    } catch(e) { el.innerHTML = errEl(e.message); }
 }
+
+function skeletonRows(n, h = 'h-12') {
+    return Array(n).fill(0).map(() => `<div class="skeleton ${h} rounded-xl mb-2"></div>`).join('');
+}
+function errEl(msg) { return `<p class="text-rose-400 text-[11px] p-2">⚠ ${msg}</p>`; }
 
 function renderBanners(banners) {
     const el = document.getElementById('banner-list');
     if (!el) return;
     if (!banners.length) {
-        el.innerHTML = `<p class="text-center py-4 text-[11px]" style="color:var(--text-dim)">Banner မရှိသေးပါ</p>`;
+        el.innerHTML = `<p class="text-center py-6 text-[11px]" style="color:var(--text-dim)">Banner မရှိသေးပါ — အပေါ်က Form မှ ထည့်ပါ</p>`;
         return;
     }
     el.innerHTML = banners.map(b => `
-        <div class="rounded-xl overflow-hidden border" style="border-color:var(--border-p)">
+        <div class="rounded-xl overflow-hidden mb-2" style="border:1px solid var(--border-p)">
             <img src="${b.image_url}" alt="${b.title||''}"
-                class="w-full object-cover" style="height:120px;object-position:center"
-                onerror="this.src='https://placehold.co/400x120/0e0e1c/9d4edd?text=Banner'">
-            <div class="flex items-center justify-between px-3 py-2" style="background:var(--bg-card-2)">
-                <div>
-                    <p class="text-[11px] font-semibold" style="color:var(--text-primary)">${b.title || '(အမည်မဲ့)'}</p>
+                class="w-full object-cover" style="height:130px;object-position:center;display:block"
+                onerror="this.src='https://placehold.co/400x130/000000/9d4edd?text=Banner'">
+            <div class="flex items-center justify-between px-3 py-2.5" style="background:var(--bg-card-2)">
+                <div class="flex-1 mr-2 min-w-0">
+                    <p class="text-[12px] font-bold truncate" style="color:var(--text-primary)">${b.title || '(အမည်မဲ့)'}</p>
                     <p class="text-[9px]" style="color:var(--text-dim)">${new Date(b.created_at).toLocaleDateString('en-GB')}</p>
                 </div>
                 <button onclick="deleteBanner('${b.id}')"
-                    class="compact-btn btn-danger px-3 py-1 text-[10px]">
-                    <i class="fa-solid fa-trash"></i>
+                    class="compact-btn btn-danger px-3 py-2 text-[11px] flex-shrink-0">
+                    <i class="fa-solid fa-trash mr-1"></i>ဖျက်
                 </button>
             </div>
         </div>`).join('');
 }
 
-async function uploadBannerFromUrl() {
-    const urlEl   = document.getElementById('banner-url-input');
+// ── FILE UPLOAD to Supabase Storage ─────────────────────
+let bannerFileToUpload = null;
+
+function onBannerFileChange(input) {
+    const file = input.files[0];
+    if (!file) return;
+    bannerFileToUpload = file;
+    const preview = document.getElementById('banner-preview');
+    if (preview) {
+        preview.src = URL.createObjectURL(file);
+        preview.style.display = 'block';
+    }
+    const label = document.getElementById('banner-upload-label');
+    if (label) label.textContent = '📎 ' + file.name;
+}
+
+async function uploadBanner() {
     const titleEl = document.getElementById('banner-title-input');
-    const imgUrl  = urlEl?.value?.trim();
     const title   = titleEl?.value?.trim() || '';
-    if (!imgUrl) { showToast('Image URL ထည့်ပါ', 'error'); return; }
+
+    if (!bannerFileToUpload) { showToast('Image ရွေးပါ', 'error'); return; }
+
+    const btn = document.getElementById('banner-upload-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'တင်နေသည်...'; }
+
     try {
-        const { error } = await db.from('banners').insert({
-            image_url: imgUrl, title, created_at: new Date().toISOString()
+        // Upload to Supabase Storage
+        const ext      = bannerFileToUpload.name.split('.').pop();
+        const fileName = `banner_${Date.now()}.${ext}`;
+
+        const { data: upData, error: upErr } = await db.storage
+            .from(BANNER_BUCKET)
+            .upload(fileName, bannerFileToUpload, { cacheControl: '3600', upsert: false });
+        if (upErr) throw upErr;
+
+        // Get public URL
+        const { data: urlData } = db.storage.from(BANNER_BUCKET).getPublicUrl(fileName);
+        const publicUrl = urlData.publicUrl;
+
+        // Insert row
+        const { error: insErr } = await db.from('banners').insert({
+            image_url: publicUrl, title, created_at: new Date().toISOString()
         });
-        if (error) throw error;
-        showToast('Banner ထည့်ပြီ! ✅', 'success');
-        if (urlEl)   urlEl.value   = '';
+        if (insErr) throw insErr;
+
+        showToast('Banner ထည့်ပြီ ✅', 'success');
+        bannerFileToUpload = null;
         if (titleEl) titleEl.value = '';
+        const preview = document.getElementById('banner-preview');
+        if (preview) { preview.style.display = 'none'; preview.src = ''; }
+        const label = document.getElementById('banner-upload-label');
+        if (label) label.textContent = '📁 Image ရွေးချယ်ပါ';
+        const inp = document.getElementById('banner-file-input');
+        if (inp) inp.value = '';
         loadBanners();
-    } catch(e) { showToast('မအောင်မြင်ပါ: ' + e.message, 'error'); }
+    } catch(e) {
+        showToast('မအောင်မြင်ပါ: ' + e.message, 'error');
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Banner ထည့်မည်'; }
+    }
 }
 
 async function deleteBanner(id) {
@@ -60,4 +116,15 @@ async function deleteBanner(id) {
         showToast('Banner ဖျက်ပြီ!', 'success');
         loadBanners();
     } catch(e) { showToast('မအောင်မြင်ပါ: ' + e.message, 'error'); }
+}
+
+// ── Panel open/close ────────────────────────────────────
+function openBannerPanel() {
+    closeSidebar();
+    const p = document.getElementById('panel-banners');
+    if (p) { p.classList.add('open'); loadBanners(); }
+}
+function closeBannerPanel() {
+    const p = document.getElementById('panel-banners');
+    if (p) p.classList.remove('open');
 }
