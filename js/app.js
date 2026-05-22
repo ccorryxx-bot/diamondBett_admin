@@ -26,7 +26,10 @@ function refreshData(tab) {
     if (tab === 'users') loadUsers();
     if (tab === 'finance') loadFinance();
     if (tab === 'agents') loadAgents();
-    if (tab === 'settings') loadSettings();
+    if (tab === 'settings') { loadSettings(); loadAffiliate(); }
+      if (tab === 'banners')  loadBanners();
+      if (tab === 'games')    loadGames();
+      if (tab === 'wheel')    loadWheel();
 }
 
 // ===== SIDEBAR =====
