@@ -82,11 +82,18 @@
     <p>DIAMOND-BETT ADMIN PANEL</p>
   </div>
 
+    <div class="field" id="email-field">
+    <input type="email" id="email-input" placeholder="Admin Email ထည့်ပါ..."
+           autocomplete="off" autocorrect="off" spellcheck="false"
+           onkeydown="if(event.key==='Enter')document.getElementById('pw-input').focus()"
+           oninput="onFieldInput()">
+    <span class="eye-btn" style="color:#4a5580;cursor:default;font-size:11px">@</span>
+  </div>
   <div class="field" id="pw-field">
     <input type="password" id="pw-input" placeholder="Access Code ထည့်ပါ..."
            autocomplete="off" autocorrect="off" spellcheck="false"
            onkeydown="if(event.key==='Enter')doLogin()"
-           oninput="onPwInput()">
+           oninput="onFieldInput()">
     <button class="eye-btn" onclick="toggleEye()" id="eye-btn">
       <i class="fa-solid fa-eye-slash" id="eye-icon"></i>
     </button>
@@ -101,10 +108,11 @@
   <p class="footer-note">AUTHORIZED ACCESS ONLY · v2.0</p>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js" defer></script>
 <script>
 // ── CONFIG ─────────────────────────────────────────────────────────
-const PASS = 'admin2234';
 let attempts = 0;
 let locked   = false;
 
@@ -237,9 +245,10 @@ function drawOrb() {
 drawOrb();
 
 // ── AUTH LOGIC ─────────────────────────────────────────────────────
-function onPwInput() {
-  const val = document.getElementById('pw-input').value;
-  orbState = val.length > 0 ? 'active' : 'idle';
+function onFieldInput() {
+  const email = document.getElementById('email-input')?.value || '';
+  const pw    = document.getElementById('pw-input').value;
+  orbState = (email.length > 0 || pw.length > 0) ? 'active' : 'idle';
   setStatus('◈ PROCESSING...', 'idle');
 }
 
@@ -261,34 +270,62 @@ function setStatus(msg, type) {
   el.className   = 'status ' + type;
 }
 
-function doLogin(btn) {
+async function doLogin(btn) {
   if (locked) return;
-  const pw = document.getElementById('pw-input').value;
+  const email = document.getElementById('email-input')?.value?.trim() || '';
+  const pw    = document.getElementById('pw-input').value;
 
-  if (pw === PASS) {
+  if (!email || !pw) {
+    orbState = 'error';
+    setStatus('◈ Email နှင့် Password ထည့်ပါ', 'err');
+    const f = document.getElementById(!email ? 'email-field' : 'pw-field');
+    f.classList.add('shake');
+    setTimeout(() => f.classList.remove('shake'), 300);
+    return;
+  }
+
+  orbState = 'active';
+  setStatus('◈ AUTHENTICATING...', 'idle');
+  const loginBtn = document.getElementById('login-btn');
+  if (loginBtn) { loginBtn.disabled = true; loginBtn.style.opacity = '0.6'; }
+
+  try {
+    if (typeof db === 'undefined') throw new Error('DB not loaded');
+
+    const { data, error } = await db.auth.signInWithPassword({ email, password: pw });
+    if (error) throw error;
+
+    // Verify is_admin flag
+    const { data: uRow, error: uErr } = await db
+      .from('users').select('is_admin').eq('id', data.user.id).single();
+    if (uErr || !uRow?.is_admin) {
+      await db.auth.signOut();
+      throw new Error('Admin access only');
+    }
+
     orbState = 'success';
     setStatus('◈ ACCESS GRANTED', 'ok');
     if (btn) addRipple(btn, event);
-    sessionStorage.setItem('db_auth', '1');
     setTimeout(() => { window.location.href = 'index.html'; }, 900);
-  } else {
+
+  } catch(e) {
     attempts++;
     orbState = 'error';
-    setStatus('◈ ACCESS DENIED' + (attempts >= 3 ? ' — TOO MANY ATTEMPTS' : ''), 'err');
+    const msg = e.message || 'Invalid credentials';
+    setStatus('◈ ACCESS DENIED — ' + (attempts >= 3 ? 'TOO MANY ATTEMPTS' : msg), 'err');
     const field = document.getElementById('pw-field');
     field.classList.add('shake');
     setTimeout(() => field.classList.remove('shake'), 300);
     document.getElementById('pw-input').value = '';
+    if (loginBtn) { loginBtn.disabled = false; loginBtn.style.opacity = '1'; }
 
     if (attempts >= 5) {
       locked = true;
-      document.getElementById('login-btn').disabled = true;
-      document.getElementById('login-btn').style.opacity = '0.4';
+      loginBtn.disabled = true; loginBtn.style.opacity = '0.4';
       setStatus('◈ LOCKED — 30s COOLDOWN', 'err');
       setTimeout(() => {
-        locked   = false; attempts = 0;
-        document.getElementById('login-btn').disabled = false;
-        document.getElementById('login-btn').style.opacity = '1';
+        locked = false; attempts = 0;
+        loginBtn.disabled = false; loginBtn.style.opacity = '1';
         orbState = 'idle';
         setStatus('◈ AWAITING AUTHENTICATION', 'idle');
       }, 30000);
@@ -316,7 +353,7 @@ document.addEventListener('cut',   e => e.preventDefault());
 document.addEventListener('selectstart', e => { if (e.target.tagName !== 'INPUT') e.preventDefault(); });
 
 // Auto-focus
-document.getElementById('pw-input').focus();
+document.getElementById('email-input')?.focus();
 </script>
 </body>
 </html>
