@@ -4,7 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Diamond-Bett | Admin</title>
-  <script>if(!sessionStorage.getItem('db_auth')){window.location.href='login.html';}</script>
+  <script>
+  (function(){
+    var hasSession=Object.keys(localStorage).some(function(k){return k.indexOf('sb-xjqrwcsxiaybpztzestb-auth-token')!==-1;});
+    if(!hasSession)window.location.href='login.html';
+  })();
+</script>
   <script>
     tailwind.config={darkMode:'class',theme:{extend:{colors:{
       slate:{50:'#000',100:'#000',200:'#0a0a10',300:'#4a5580',400:'#4a5580',500:'#8892b0',600:'#8892b0',700:'#c77dff',800:'#e2e4f0',900:'#f0f0ff'},
@@ -612,9 +617,9 @@ function changeAdminPassword() {
 }
 
 // ── Logout ─────────────────────────────────────────────
-function adminLogout() {
+async function adminLogout() {
   if (!confirm('ထွက်မှာ သေချာပါသလား?')) return;
-  sessionStorage.removeItem('db_auth');
+  try { if(typeof db!=='undefined') await db.auth.signOut(); } catch(e){}
   window.location.href = 'login.html';
 }
 
