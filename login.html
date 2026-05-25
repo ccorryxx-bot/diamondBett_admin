@@ -312,7 +312,9 @@ async function doLogin(btn) {
     attempts++;
     orbState = 'error';
     const msg = e.message || 'Invalid credentials';
-    setStatus('◈ ACCESS DENIED — ' + (attempts >= 3 ? 'TOO MANY ATTEMPTS' : msg), 'err');
+    const triesLeft = Math.max(0, 5 - attempts);
+    const hint = attempts >= 3 ? ' (' + triesLeft + ' tries left)' : '';
+    setStatus('◈ ACCESS DENIED — ' + msg + hint, 'err');
     const field = document.getElementById('pw-field');
     field.classList.add('shake');
     setTimeout(() => field.classList.remove('shake'), 300);
