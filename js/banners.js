@@ -1,7 +1,6 @@
 // ═══════════════════════════════════════════════════════
-//  BANNERS  —  Supabase Storage upload + CRUD
+//  BANNERS  —  ImageKit CDN upload + CRUD
 // ═══════════════════════════════════════════════════════
-const BANNER_BUCKET = 'banners';
 
 async function loadBanners() {
     const el = document.getElementById('banner-list');
@@ -46,7 +45,7 @@ function renderBanners(banners) {
         </div>`).join('');
 }
 
-// ── FILE UPLOAD to Supabase Storage ─────────────────────
+// ── FILE UPLOAD to ImageKit CDN ──────────────────────────
 let bannerFileToUpload = null;
 
 function onBannerFileChange(input) {
@@ -72,20 +71,10 @@ async function uploadBanner() {
     if (btn) { btn.disabled = true; btn.textContent = 'တင်နေသည်...'; }
 
     try {
-        // Upload to Supabase Storage
-        const ext      = bannerFileToUpload.name.split('.').pop();
-        const fileName = `banner_${Date.now()}.${ext}`;
+        // Upload to ImageKit CDN
+        const publicUrl = await uploadToImageKit(bannerFileToUpload, 'banners');
 
-        const { data: upData, error: upErr } = await db.storage
-            .from(BANNER_BUCKET)
-            .upload(fileName, bannerFileToUpload, { cacheControl: '3600', upsert: false });
-        if (upErr) throw upErr;
-
-        // Get public URL
-        const { data: urlData } = db.storage.from(BANNER_BUCKET).getPublicUrl(fileName);
-        const publicUrl = urlData.publicUrl;
-
-        // Insert row
+        // Save URL to Supabase DB
         const { error: insErr } = await db.from('banners').insert({
             image_url: publicUrl, title, created_at: new Date().toISOString()
         });
@@ -118,7 +107,7 @@ async function deleteBanner(id) {
     } catch(e) { showToast('မအောင်မြင်ပါ: ' + e.message, 'error'); }
 }
 
-// ── Panel open/close ────────────────────────────────────
+// ── Panel open/close ─────────────────────────────────────
 function openBannerPanel() {
     closeSidebar();
     const p = document.getElementById('panel-banners');
