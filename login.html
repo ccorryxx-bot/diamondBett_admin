@@ -290,7 +290,7 @@ async function doLogin(btn) {
   if (loginBtn) { loginBtn.disabled = true; loginBtn.style.opacity = '0.6'; }
 
   try {
-    const db = window.db; if (!db) throw new Error("DB not loaded");
+    if (typeof db === 'undefined' || !db) throw new Error("DB not loaded");
 
     const { data, error } = await db.auth.signInWithPassword({ email, password: pw });
     if (error) throw error;
@@ -318,7 +318,10 @@ async function doLogin(btn) {
     const field = document.getElementById('pw-field');
     field.classList.add('shake');
     setTimeout(() => field.classList.remove('shake'), 300);
-    document.getElementById('pw-input').value = '';
+    // Only clear password on actual auth failure (not on network/DB errors)
+    if (!e.message?.includes('DB not loaded') && !e.message?.includes('fetch') && !e.message?.includes('network')) {
+      document.getElementById('pw-input').value = '';
+    }
     if (loginBtn) { loginBtn.disabled = false; loginBtn.style.opacity = '1'; }
 
     if (attempts >= 5) {
