@@ -735,90 +735,281 @@
   <div class="overlay-panel-body space-y-4">
 
     <!-- Sub-tabs -->
-    <div style="display:flex;gap:0;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:4px">
-      <button class="ha-sub-tab active" onclick="haSubTab(this,'icon')"
+    <div style="display:flex;border-bottom:1px solid rgba(255,255,255,.08)">
+      <button class="ha-tab-btn" data-tab="icon" onclick="haShowTab('icon')"
         style="flex:1;background:none;border:none;border-bottom:2px solid var(--gold);color:var(--gold);font-size:11px;font-weight:800;padding:10px 4px;cursor:pointer">
         <i class="fa-solid fa-share-nodes mr-1"></i>Social Icons (7)
       </button>
-      <button class="ha-sub-tab" onclick="haSubTab(this,'license')"
+      <button class="ha-tab-btn" data-tab="license" onclick="haShowTab('license')"
         style="flex:1;background:none;border:none;border-bottom:2px solid transparent;color:var(--text-dim);font-size:11px;font-weight:700;padding:10px 4px;cursor:pointer">
         <i class="fa-solid fa-certificate mr-1"></i>License Logos (9)
       </button>
     </div>
 
-    <!-- Add button -->
-    <button onclick="openHaForm()" class="compact-btn btn-primary w-full" style="padding:11px;font-size:12px">
-      <i class="fa-solid fa-plus mr-2"></i>အသစ် ထည့်မည်
-    </button>
+    <!-- ── SOCIAL ICONS PANEL (7 slots) ── -->
+    <div id="ha-icons-panel">
+      <div class="card space-y-3" style="border:1px solid rgba(245,197,24,.25);box-shadow:0 0 12px rgba(245,197,24,.06)">
+        <p class="section-title" style="color:var(--gold)">
+          <i class="fa-solid fa-share-nodes mr-1"></i>Social Icon Image URLs — 7 ခု
+        </p>
+        <p style="font-size:10px;color:var(--text-dim);line-height:1.6">
+          ImageKit.io မှ URL copy ယူပြီး box တစ်ခုချင်း paste ပါ
+        </p>
 
-    <!-- Add / Edit Form -->
-    <div id="ha-form" style="display:none;padding:14px;border-radius:14px;background:var(--bg-card-2);border:1px solid rgba(245,197,24,.25);box-shadow:0 0 16px rgba(245,197,24,.06)">
-      <p id="ha-form-title" style="font-size:12px;font-weight:800;color:var(--gold);margin-bottom:12px">အသစ် ထည့်မည်</p>
-
-      <div style="margin-bottom:8px">
-        <label style="font-size:9px;font-weight:700;color:var(--text-dim);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em">Type</label>
-        <select id="ha-type" style="width:100%;background:var(--bg-card);border:1px solid var(--border-p);border-radius:8px;color:var(--text-primary);font-size:11px;padding:8px 10px;outline:none">
-          <option value="icon">Social Icon (icon)</option>
-          <option value="license">License Logo (license)</option>
-        </select>
-      </div>
-
-      <div style="margin-bottom:8px">
-        <label style="font-size:9px;font-weight:700;color:var(--text-dim);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em">Name</label>
-        <input id="ha-name" type="text" placeholder="ဥပမာ: Twitter, PAGCOR ..."
-          style="width:100%;background:var(--bg-card);border:1px solid var(--border-p);border-radius:8px;color:var(--text-primary);font-size:11px;padding:8px 10px;font-family:inherit;outline:none">
-      </div>
-
-      <div style="margin-bottom:8px">
-        <label style="font-size:9px;font-weight:700;color:var(--text-dim);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em">🖼 Image URL (ImageKit.io)</label>
-        <input id="ha-img" type="url" placeholder="https://ik.imagekit.io/..."
-          oninput="haPreviewInput()"
-          style="width:100%;background:var(--bg-card);border:1px solid var(--border-p);border-radius:8px;color:var(--text-primary);font-size:11px;padding:8px 10px;font-family:inherit;outline:none">
-        <!-- Live preview -->
-        <div id="ha-preview-wrap" style="display:none;margin-top:8px;justify-content:center;align-items:center;padding:10px;background:rgba(255,255,255,.04);border-radius:10px;border:1px solid rgba(255,255,255,.07)">
-          <img id="ha-preview-img" src="" alt="preview" style="max-height:56px;max-width:120px;object-fit:contain;border-radius:8px" onerror="this.style.opacity='.3'">
+        <!-- Icon 1 -->
+        <div style="padding:12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(245,197,24,.15)">
+          <div class="flex items-center gap-3 mb-2">
+            <div id="haprev_ic_1" style="width:44px;height:44px;border-radius:50%;flex-shrink:0;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;overflow:hidden">
+              <i class="fa-solid fa-image" style="color:rgba(255,255,255,.2);font-size:16px"></i>
+            </div>
+            <p style="font-size:12px;font-weight:700;color:var(--text-primary)">Social Icon 1</p>
+          </div>
+          <input id="ha_ic_1" type="url" placeholder="https://ik.imagekit.io/..."
+            oninput="haPreviewInput('ic_1')"
+            style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(245,197,24,.25);border-radius:8px;color:var(--text-primary);font-size:11px;padding:9px 12px;font-family:inherit;outline:none">
         </div>
-      </div>
 
-      <div style="margin-bottom:8px">
-        <label style="font-size:9px;font-weight:700;color:var(--text-dim);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em">🔗 Link URL <span style="text-transform:none;color:rgba(255,255,255,.3)">(optional)</span></label>
-        <input id="ha-link" type="url" placeholder="https://twitter.com / viber://..."
-          style="width:100%;background:var(--bg-card);border:1px solid var(--border-p);border-radius:8px;color:var(--text-primary);font-size:11px;padding:8px 10px;font-family:inherit;outline:none">
-      </div>
+        <!-- Icon 2 -->
+        <div style="padding:12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(245,197,24,.15)">
+          <div class="flex items-center gap-3 mb-2">
+            <div id="haprev_ic_2" style="width:44px;height:44px;border-radius:50%;flex-shrink:0;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;overflow:hidden">
+              <i class="fa-solid fa-image" style="color:rgba(255,255,255,.2);font-size:16px"></i>
+            </div>
+            <p style="font-size:12px;font-weight:700;color:var(--text-primary)">Social Icon 2</p>
+          </div>
+          <input id="ha_ic_2" type="url" placeholder="https://ik.imagekit.io/..."
+            oninput="haPreviewInput('ic_2')"
+            style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(245,197,24,.25);border-radius:8px;color:var(--text-primary);font-size:11px;padding:9px 12px;font-family:inherit;outline:none">
+        </div>
 
-      <div style="margin-bottom:12px">
-        <label style="font-size:9px;font-weight:700;color:var(--text-dim);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em">Sort Order</label>
-        <input id="ha-sort" type="number" value="0" min="0" max="99"
-          style="width:80px;background:var(--bg-card);border:1px solid var(--border-p);border-radius:8px;color:var(--text-primary);font-size:11px;padding:8px 10px;font-family:inherit;outline:none">
-      </div>
+        <!-- Icon 3 -->
+        <div style="padding:12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(245,197,24,.15)">
+          <div class="flex items-center gap-3 mb-2">
+            <div id="haprev_ic_3" style="width:44px;height:44px;border-radius:50%;flex-shrink:0;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;overflow:hidden">
+              <i class="fa-solid fa-image" style="color:rgba(255,255,255,.2);font-size:16px"></i>
+            </div>
+            <p style="font-size:12px;font-weight:700;color:var(--text-primary)">Social Icon 3</p>
+          </div>
+          <input id="ha_ic_3" type="url" placeholder="https://ik.imagekit.io/..."
+            oninput="haPreviewInput('ic_3')"
+            style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(245,197,24,.25);border-radius:8px;color:var(--text-primary);font-size:11px;padding:9px 12px;font-family:inherit;outline:none">
+        </div>
 
-      <p id="ha-form-msg" style="font-size:11px;text-align:center;min-height:16px;margin-bottom:8px"></p>
-      <div style="display:flex;gap:8px">
-        <button onclick="_closeHaForm()" class="compact-btn btn-ghost flex-1" style="padding:11px">မလုပ်တော့</button>
-        <button id="ha-save-btn" onclick="haSave()" class="compact-btn btn-primary" style="flex:2;padding:11px;font-size:12px">
+        <!-- Icon 4 -->
+        <div style="padding:12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(245,197,24,.15)">
+          <div class="flex items-center gap-3 mb-2">
+            <div id="haprev_ic_4" style="width:44px;height:44px;border-radius:50%;flex-shrink:0;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;overflow:hidden">
+              <i class="fa-solid fa-image" style="color:rgba(255,255,255,.2);font-size:16px"></i>
+            </div>
+            <p style="font-size:12px;font-weight:700;color:var(--text-primary)">Social Icon 4</p>
+          </div>
+          <input id="ha_ic_4" type="url" placeholder="https://ik.imagekit.io/..."
+            oninput="haPreviewInput('ic_4')"
+            style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(245,197,24,.25);border-radius:8px;color:var(--text-primary);font-size:11px;padding:9px 12px;font-family:inherit;outline:none">
+        </div>
+
+        <!-- Icon 5 -->
+        <div style="padding:12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(245,197,24,.15)">
+          <div class="flex items-center gap-3 mb-2">
+            <div id="haprev_ic_5" style="width:44px;height:44px;border-radius:50%;flex-shrink:0;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;overflow:hidden">
+              <i class="fa-solid fa-image" style="color:rgba(255,255,255,.2);font-size:16px"></i>
+            </div>
+            <p style="font-size:12px;font-weight:700;color:var(--text-primary)">Social Icon 5</p>
+          </div>
+          <input id="ha_ic_5" type="url" placeholder="https://ik.imagekit.io/..."
+            oninput="haPreviewInput('ic_5')"
+            style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(245,197,24,.25);border-radius:8px;color:var(--text-primary);font-size:11px;padding:9px 12px;font-family:inherit;outline:none">
+        </div>
+
+        <!-- Icon 6 -->
+        <div style="padding:12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(245,197,24,.15)">
+          <div class="flex items-center gap-3 mb-2">
+            <div id="haprev_ic_6" style="width:44px;height:44px;border-radius:50%;flex-shrink:0;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;overflow:hidden">
+              <i class="fa-solid fa-image" style="color:rgba(255,255,255,.2);font-size:16px"></i>
+            </div>
+            <p style="font-size:12px;font-weight:700;color:var(--text-primary)">Social Icon 6</p>
+          </div>
+          <input id="ha_ic_6" type="url" placeholder="https://ik.imagekit.io/..."
+            oninput="haPreviewInput('ic_6')"
+            style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(245,197,24,.25);border-radius:8px;color:var(--text-primary);font-size:11px;padding:9px 12px;font-family:inherit;outline:none">
+        </div>
+
+        <!-- Icon 7 -->
+        <div style="padding:12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(245,197,24,.15)">
+          <div class="flex items-center gap-3 mb-2">
+            <div id="haprev_ic_7" style="width:44px;height:44px;border-radius:50%;flex-shrink:0;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;overflow:hidden">
+              <i class="fa-solid fa-image" style="color:rgba(255,255,255,.2);font-size:16px"></i>
+            </div>
+            <p style="font-size:12px;font-weight:700;color:var(--text-primary)">Social Icon 7</p>
+          </div>
+          <input id="ha_ic_7" type="url" placeholder="https://ik.imagekit.io/..."
+            oninput="haPreviewInput('ic_7')"
+            style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(245,197,24,.25);border-radius:8px;color:var(--text-primary);font-size:11px;padding:9px 12px;font-family:inherit;outline:none">
+        </div>
+
+        <p id="ha-icons-msg" style="font-size:11px;text-align:center;min-height:16px"></p>
+        <button id="ha-icons-save-btn" onclick="haIconsSave()" class="compact-btn btn-primary w-full" style="padding:13px;font-size:13px;background:linear-gradient(135deg,#b8860b,#d4a017)">
           <i class="fa-solid fa-floppy-disk mr-2"></i>သိမ်းဆည်း
         </button>
       </div>
-    </div>
 
-    <!-- List -->
-    <div id="ha-list">
-      <div class="skeleton h-16 rounded-xl mb-2"></div>
-      <div class="skeleton h-16 rounded-xl mb-2"></div>
-      <div class="skeleton h-16 rounded-xl"></div>
-    </div>
-
-    <!-- Info box -->
-    <div class="card space-y-2" style="border:1px solid rgba(245,197,24,.15)">
-      <p class="section-title">အသုံးပြုနည်း</p>
-      <div style="font-size:10px;color:var(--text-dim);line-height:1.8">
-        <div style="padding:6px 10px;background:rgba(245,197,24,.08);border-radius:8px;margin-bottom:6px;border:1px solid rgba(245,197,24,.15)">
-          <i class="fa-solid fa-circle-info mr-1" style="color:var(--gold)"></i>
-          ImageKit မှ image URL copy ယူပြီး paste ပါ
+      <div class="card space-y-2 mt-3" style="border:1px solid rgba(245,197,24,.15)">
+        <div style="font-size:10px;color:var(--text-dim);line-height:1.8">
+          <div style="padding:6px 10px;background:rgba(245,197,24,.08);border-radius:8px;margin-bottom:6px;border:1px solid rgba(245,197,24,.15)">
+            <i class="fa-solid fa-circle-info mr-1" style="color:var(--gold)"></i>
+            ImageKit မှ image URL copy ယူပြီး paste ပါ
+          </div>
+          <div style="padding:6px 10px;background:rgba(245,197,24,.08);border-radius:8px;border:1px solid rgba(245,197,24,.15)">
+            <i class="fa-solid fa-circle-check mr-1" style="color:var(--green)"></i>
+            သိမ်းပြီးသည်နှင့် Home Page မှာ ချက်ချင်း ပြသမည်
+          </div>
         </div>
-        <div style="padding:6px 10px;background:rgba(245,197,24,.08);border-radius:8px;border:1px solid rgba(245,197,24,.15)">
-          <i class="fa-solid fa-circle-check mr-1" style="color:var(--green)"></i>
-          သိမ်းပြီးသည်နှင့် Home Page မှာ ချက်ချင်း ပြသမည်
+      </div>
+    </div>
+
+    <!-- ── LICENSE LOGOS PANEL (9 slots) ── -->
+    <div id="ha-license-panel" style="display:none">
+      <div class="card space-y-3" style="border:1px solid rgba(139,92,246,.25);box-shadow:0 0 12px rgba(139,92,246,.06)">
+        <p class="section-title" style="color:#a78bfa">
+          <i class="fa-solid fa-certificate mr-1"></i>License Logo Image URLs — 9 ခု
+        </p>
+        <p style="font-size:10px;color:var(--text-dim);line-height:1.6">
+          ImageKit.io မှ URL copy ယူပြီး box တစ်ခုချင်း paste ပါ
+        </p>
+
+        <!-- License 1 -->
+        <div style="padding:12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(139,92,246,.2)">
+          <div class="flex items-center gap-3 mb-2">
+            <div id="haprev_lc_1" style="width:64px;height:36px;border-radius:8px;flex-shrink:0;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;overflow:hidden">
+              <i class="fa-solid fa-image" style="color:rgba(255,255,255,.2);font-size:14px"></i>
+            </div>
+            <p style="font-size:12px;font-weight:700;color:var(--text-primary)">License Logo 1</p>
+          </div>
+          <input id="ha_lc_1" type="url" placeholder="https://ik.imagekit.io/..."
+            oninput="haPreviewInput('lc_1')"
+            style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(139,92,246,.3);border-radius:8px;color:var(--text-primary);font-size:11px;padding:9px 12px;font-family:inherit;outline:none">
+        </div>
+
+        <!-- License 2 -->
+        <div style="padding:12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(139,92,246,.2)">
+          <div class="flex items-center gap-3 mb-2">
+            <div id="haprev_lc_2" style="width:64px;height:36px;border-radius:8px;flex-shrink:0;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;overflow:hidden">
+              <i class="fa-solid fa-image" style="color:rgba(255,255,255,.2);font-size:14px"></i>
+            </div>
+            <p style="font-size:12px;font-weight:700;color:var(--text-primary)">License Logo 2</p>
+          </div>
+          <input id="ha_lc_2" type="url" placeholder="https://ik.imagekit.io/..."
+            oninput="haPreviewInput('lc_2')"
+            style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(139,92,246,.3);border-radius:8px;color:var(--text-primary);font-size:11px;padding:9px 12px;font-family:inherit;outline:none">
+        </div>
+
+        <!-- License 3 -->
+        <div style="padding:12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(139,92,246,.2)">
+          <div class="flex items-center gap-3 mb-2">
+            <div id="haprev_lc_3" style="width:64px;height:36px;border-radius:8px;flex-shrink:0;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;overflow:hidden">
+              <i class="fa-solid fa-image" style="color:rgba(255,255,255,.2);font-size:14px"></i>
+            </div>
+            <p style="font-size:12px;font-weight:700;color:var(--text-primary)">License Logo 3</p>
+          </div>
+          <input id="ha_lc_3" type="url" placeholder="https://ik.imagekit.io/..."
+            oninput="haPreviewInput('lc_3')"
+            style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(139,92,246,.3);border-radius:8px;color:var(--text-primary);font-size:11px;padding:9px 12px;font-family:inherit;outline:none">
+        </div>
+
+        <!-- License 4 -->
+        <div style="padding:12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(139,92,246,.2)">
+          <div class="flex items-center gap-3 mb-2">
+            <div id="haprev_lc_4" style="width:64px;height:36px;border-radius:8px;flex-shrink:0;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;overflow:hidden">
+              <i class="fa-solid fa-image" style="color:rgba(255,255,255,.2);font-size:14px"></i>
+            </div>
+            <p style="font-size:12px;font-weight:700;color:var(--text-primary)">License Logo 4</p>
+          </div>
+          <input id="ha_lc_4" type="url" placeholder="https://ik.imagekit.io/..."
+            oninput="haPreviewInput('lc_4')"
+            style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(139,92,246,.3);border-radius:8px;color:var(--text-primary);font-size:11px;padding:9px 12px;font-family:inherit;outline:none">
+        </div>
+
+        <!-- License 5 -->
+        <div style="padding:12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(139,92,246,.2)">
+          <div class="flex items-center gap-3 mb-2">
+            <div id="haprev_lc_5" style="width:64px;height:36px;border-radius:8px;flex-shrink:0;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;overflow:hidden">
+              <i class="fa-solid fa-image" style="color:rgba(255,255,255,.2);font-size:14px"></i>
+            </div>
+            <p style="font-size:12px;font-weight:700;color:var(--text-primary)">License Logo 5</p>
+          </div>
+          <input id="ha_lc_5" type="url" placeholder="https://ik.imagekit.io/..."
+            oninput="haPreviewInput('lc_5')"
+            style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(139,92,246,.3);border-radius:8px;color:var(--text-primary);font-size:11px;padding:9px 12px;font-family:inherit;outline:none">
+        </div>
+
+        <!-- License 6 -->
+        <div style="padding:12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(139,92,246,.2)">
+          <div class="flex items-center gap-3 mb-2">
+            <div id="haprev_lc_6" style="width:64px;height:36px;border-radius:8px;flex-shrink:0;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;overflow:hidden">
+              <i class="fa-solid fa-image" style="color:rgba(255,255,255,.2);font-size:14px"></i>
+            </div>
+            <p style="font-size:12px;font-weight:700;color:var(--text-primary)">License Logo 6</p>
+          </div>
+          <input id="ha_lc_6" type="url" placeholder="https://ik.imagekit.io/..."
+            oninput="haPreviewInput('lc_6')"
+            style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(139,92,246,.3);border-radius:8px;color:var(--text-primary);font-size:11px;padding:9px 12px;font-family:inherit;outline:none">
+        </div>
+
+        <!-- License 7 -->
+        <div style="padding:12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(139,92,246,.2)">
+          <div class="flex items-center gap-3 mb-2">
+            <div id="haprev_lc_7" style="width:64px;height:36px;border-radius:8px;flex-shrink:0;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;overflow:hidden">
+              <i class="fa-solid fa-image" style="color:rgba(255,255,255,.2);font-size:14px"></i>
+            </div>
+            <p style="font-size:12px;font-weight:700;color:var(--text-primary)">License Logo 7</p>
+          </div>
+          <input id="ha_lc_7" type="url" placeholder="https://ik.imagekit.io/..."
+            oninput="haPreviewInput('lc_7')"
+            style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(139,92,246,.3);border-radius:8px;color:var(--text-primary);font-size:11px;padding:9px 12px;font-family:inherit;outline:none">
+        </div>
+
+        <!-- License 8 -->
+        <div style="padding:12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(139,92,246,.2)">
+          <div class="flex items-center gap-3 mb-2">
+            <div id="haprev_lc_8" style="width:64px;height:36px;border-radius:8px;flex-shrink:0;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;overflow:hidden">
+              <i class="fa-solid fa-image" style="color:rgba(255,255,255,.2);font-size:14px"></i>
+            </div>
+            <p style="font-size:12px;font-weight:700;color:var(--text-primary)">License Logo 8</p>
+          </div>
+          <input id="ha_lc_8" type="url" placeholder="https://ik.imagekit.io/..."
+            oninput="haPreviewInput('lc_8')"
+            style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(139,92,246,.3);border-radius:8px;color:var(--text-primary);font-size:11px;padding:9px 12px;font-family:inherit;outline:none">
+        </div>
+
+        <!-- License 9 -->
+        <div style="padding:12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(139,92,246,.2)">
+          <div class="flex items-center gap-3 mb-2">
+            <div id="haprev_lc_9" style="width:64px;height:36px;border-radius:8px;flex-shrink:0;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;overflow:hidden">
+              <i class="fa-solid fa-image" style="color:rgba(255,255,255,.2);font-size:14px"></i>
+            </div>
+            <p style="font-size:12px;font-weight:700;color:var(--text-primary)">License Logo 9</p>
+          </div>
+          <input id="ha_lc_9" type="url" placeholder="https://ik.imagekit.io/..."
+            oninput="haPreviewInput('lc_9')"
+            style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(139,92,246,.3);border-radius:8px;color:var(--text-primary);font-size:11px;padding:9px 12px;font-family:inherit;outline:none">
+        </div>
+
+        <p id="ha-license-msg" style="font-size:11px;text-align:center;min-height:16px"></p>
+        <button id="ha-license-save-btn" onclick="haLicenseSave()" class="compact-btn btn-primary w-full" style="padding:13px;font-size:13px;background:linear-gradient(135deg,#6d28d9,#7c3aed)">
+          <i class="fa-solid fa-floppy-disk mr-2"></i>သိမ်းဆည်း
+        </button>
+      </div>
+
+      <div class="card space-y-2 mt-3" style="border:1px solid rgba(139,92,246,.15)">
+        <div style="font-size:10px;color:var(--text-dim);line-height:1.8">
+          <div style="padding:6px 10px;background:rgba(139,92,246,.08);border-radius:8px;margin-bottom:6px;border:1px solid rgba(139,92,246,.2)">
+            <i class="fa-solid fa-circle-info mr-1" style="color:#a78bfa"></i>
+            ImageKit မှ license logo URL copy ယူပြီး paste ပါ
+          </div>
+          <div style="padding:6px 10px;background:rgba(139,92,246,.08);border-radius:8px;border:1px solid rgba(139,92,246,.2)">
+            <i class="fa-solid fa-circle-check mr-1" style="color:var(--green)"></i>
+            သိမ်းပြီးသည်နှင့် Home Page footer မှာ ချက်ချင်း ပြသမည်
+          </div>
         </div>
       </div>
     </div>
