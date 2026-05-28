@@ -109,6 +109,11 @@
       <span>CS ဝန်ဆောင်မှု စီမံမှု</span>
       <i class="fa-solid fa-chevron-right ml-auto" style="font-size:10px;color:var(--text-dim)"></i>
     </div>
+    <div class="sidebar-link" onclick="openAgentIconsPanel();closeSidebar()">
+      <i class="fa-solid fa-share-nodes" style="color:#a78bfa"></i>
+      <span>Agent Dashboard Icon Images</span>
+      <i class="fa-solid fa-chevron-right ml-auto" style="font-size:10px;color:var(--text-dim)"></i>
+    </div>
   </div>
 
   <!-- Recent Activity -->
@@ -692,6 +697,78 @@ document.addEventListener('keydown', e => {
     if (document.getElementById('edit-game-modal')?.style.display !== 'none') closeEditGameModal();
   }
 });
+
+// ═══════════════════════════════════════════════════════
+//  AGENT ICONS PANEL — Content Control
+// ═══════════════════════════════════════════════════════
+const ICON_DEFS = [
+  { key:'share',    label:'မျှဝေ',   icon:'fa-share-nodes',   color:'#4f83ff' },
+  { key:'telegram', label:'Telegram', icon:'fa-telegram',      color:'#33b5f7' },
+  { key:'viber',    label:'Viber',    icon:'fa-comment-dots',  color:'#8e84d1' },
+  { key:'facebook', label:'Facebook', icon:'fa-facebook',      color:'#4c9aff' },
+  { key:'whatsapp', label:'WhatsApp', icon:'fa-whatsapp',      color:'#46f085' },
+];
+
+function openAgentIconsPanel() {
+  document.getElementById('panel-agent-icons')?.classList.add('open');
+  loadAgentIconsPanel();
+}
+function closeAgentIconsPanel() {
+  document.getElementById('panel-agent-icons')?.classList.remove('open');
+}
+
+async function loadAgentIconsPanel() {
+  const list = document.getElementById('agent-icons-list');
+  if (!list) return;
+  list.innerHTML = ICON_DEFS.map(() => '<div class="skeleton h-14 rounded-xl mb-2"></div>').join('');
+
+  const { data } = await db.from('agent_icons').select('key,image_url').order('key');
+  const map = {};
+  (data || []).forEach(r => { map[r.key] = r.image_url || ''; });
+
+  list.innerHTML = ICON_DEFS.map(ic => {
+    const url = map[ic.key] || '';
+    const prev = url ? `background:url(${url}) center/cover no-repeat;background-size:cover;` : 'background:var(--bg-card-2);';
+    return `<div class="flex items-center gap-3 py-2" style="border-bottom:1px solid var(--border-p)">
+      <div id="aiprev_${ic.key}" style="width:40px;height:40px;border-radius:10px;flex-shrink:0;${prev}border:1px solid var(--border-p);"></div>
+      <div style="font-size:10px;color:var(--text-secondary);width:70px;flex-shrink:0;font-weight:600">${ic.label}</div>
+      <input id="ai_${ic.key}" value="${url}" placeholder="ImageKit URL..."
+        oninput="previewAI('${ic.key}')"
+        style="flex:1;background:var(--bg-card-2);border:1px solid var(--border-p);border-radius:8px;color:var(--text-primary);font-size:10px;padding:8px 10px;min-width:0;font-family:inherit;">
+    </div>`;
+  }).join('');
+}
+
+function previewAI(key) {
+  const url = document.getElementById('ai_' + key)?.value || '';
+  const prev = document.getElementById('aiprev_' + key);
+  if (!prev) return;
+  if (url) { prev.style.backgroundImage = 'url(' + url + ')'; prev.style.backgroundSize = 'cover'; prev.style.backgroundPosition = 'center'; }
+  else     { prev.style.backgroundImage = ''; prev.style.background = 'var(--bg-card-2)'; }
+}
+
+async function saveAgentIcons() {
+  const btn = document.getElementById('save-agent-icons-btn');
+  const msg = document.getElementById('agent-icons-msg');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>သိမ်းနေသည်...'; }
+  if (msg) msg.textContent = '';
+
+  const rows = ICON_DEFS.map(ic => ({
+    key: ic.key,
+    image_url: (document.getElementById('ai_' + ic.key)?.value || '').trim(),
+    link_url: '',
+  }));
+
+  const { error } = await db.from('agent_icons').upsert(rows, { onConflict: 'key' });
+
+  if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-floppy-disk mr-2"></i>သိမ်းဆည်း'; }
+  if (error) {
+    if (msg) { msg.style.color = 'var(--rose)'; msg.textContent = '❌ ' + error.message; }
+  } else {
+    if (msg) { msg.style.color = 'var(--green)'; msg.textContent = '✅ သိမ်းပြီးပြီ! Frontend icons updated.'; setTimeout(() => { if(msg) msg.textContent=''; }, 3500); }
+    showToast('Agent Icons updated ✓', 'success');
+  }
+}
 </script>
 
 </body>
