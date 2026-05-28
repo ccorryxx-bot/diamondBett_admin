@@ -114,6 +114,11 @@
       <span>Account Page KPay, Wave Image</span>
       <i class="fa-solid fa-chevron-right ml-auto" style="font-size:10px;color:var(--text-dim)"></i>
     </div>
+    <div class="sidebar-link" onclick="openHomeAssetsPanel();closeSidebar()">
+      <i class="fa-solid fa-globe" style="color:#f5c518"></i>
+      <span>Home Page icons &amp; license logo</span>
+      <i class="fa-solid fa-chevron-right ml-auto" style="font-size:10px;color:var(--text-dim)"></i>
+    </div>
   </div>
 
   <!-- Recent Activity -->
@@ -716,6 +721,111 @@
   </div>
 </div>
 
+<!-- ═══════════ OVERLAY PANEL — HOME PAGE ASSETS ═════════ -->
+<div id="panel-home-assets" class="overlay-panel">
+  <div class="overlay-panel-header">
+    <button onclick="closeHomeAssetsPanel()" style="width:36px;height:36px;border-radius:8px;flex-shrink:0;background:var(--bg-card-2);border:1px solid var(--border-p);color:var(--text-secondary);display:flex;align-items:center;justify-content:center">
+      <i class="fa-solid fa-arrow-left"></i>
+    </button>
+    <div>
+      <p style="font-size:13px;font-weight:800;color:var(--text-primary)">Home Page icons &amp; license logo</p>
+      <p style="font-size:9px;color:var(--text-dim)">Social Icons 7 ခု · License Logos 9 ခု</p>
+    </div>
+  </div>
+  <div class="overlay-panel-body space-y-4">
+
+    <!-- Sub-tabs -->
+    <div style="display:flex;gap:0;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:4px">
+      <button class="ha-sub-tab active" onclick="haSubTab(this,'icon')"
+        style="flex:1;background:none;border:none;border-bottom:2px solid var(--gold);color:var(--gold);font-size:11px;font-weight:800;padding:10px 4px;cursor:pointer">
+        <i class="fa-solid fa-share-nodes mr-1"></i>Social Icons (7)
+      </button>
+      <button class="ha-sub-tab" onclick="haSubTab(this,'license')"
+        style="flex:1;background:none;border:none;border-bottom:2px solid transparent;color:var(--text-dim);font-size:11px;font-weight:700;padding:10px 4px;cursor:pointer">
+        <i class="fa-solid fa-certificate mr-1"></i>License Logos (9)
+      </button>
+    </div>
+
+    <!-- Add button -->
+    <button onclick="openHaForm()" class="compact-btn btn-primary w-full" style="padding:11px;font-size:12px">
+      <i class="fa-solid fa-plus mr-2"></i>အသစ် ထည့်မည်
+    </button>
+
+    <!-- Add / Edit Form -->
+    <div id="ha-form" style="display:none;padding:14px;border-radius:14px;background:var(--bg-card-2);border:1px solid rgba(245,197,24,.25);box-shadow:0 0 16px rgba(245,197,24,.06)">
+      <p id="ha-form-title" style="font-size:12px;font-weight:800;color:var(--gold);margin-bottom:12px">အသစ် ထည့်မည်</p>
+
+      <div style="margin-bottom:8px">
+        <label style="font-size:9px;font-weight:700;color:var(--text-dim);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em">Type</label>
+        <select id="ha-type" style="width:100%;background:var(--bg-card);border:1px solid var(--border-p);border-radius:8px;color:var(--text-primary);font-size:11px;padding:8px 10px;outline:none">
+          <option value="icon">Social Icon (icon)</option>
+          <option value="license">License Logo (license)</option>
+        </select>
+      </div>
+
+      <div style="margin-bottom:8px">
+        <label style="font-size:9px;font-weight:700;color:var(--text-dim);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em">Name</label>
+        <input id="ha-name" type="text" placeholder="ဥပမာ: Twitter, PAGCOR ..."
+          style="width:100%;background:var(--bg-card);border:1px solid var(--border-p);border-radius:8px;color:var(--text-primary);font-size:11px;padding:8px 10px;font-family:inherit;outline:none">
+      </div>
+
+      <div style="margin-bottom:8px">
+        <label style="font-size:9px;font-weight:700;color:var(--text-dim);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em">🖼 Image URL (ImageKit.io)</label>
+        <input id="ha-img" type="url" placeholder="https://ik.imagekit.io/..."
+          oninput="haPreviewInput()"
+          style="width:100%;background:var(--bg-card);border:1px solid var(--border-p);border-radius:8px;color:var(--text-primary);font-size:11px;padding:8px 10px;font-family:inherit;outline:none">
+        <!-- Live preview -->
+        <div id="ha-preview-wrap" style="display:none;margin-top:8px;justify-content:center;align-items:center;padding:10px;background:rgba(255,255,255,.04);border-radius:10px;border:1px solid rgba(255,255,255,.07)">
+          <img id="ha-preview-img" src="" alt="preview" style="max-height:56px;max-width:120px;object-fit:contain;border-radius:8px" onerror="this.style.opacity='.3'">
+        </div>
+      </div>
+
+      <div style="margin-bottom:8px">
+        <label style="font-size:9px;font-weight:700;color:var(--text-dim);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em">🔗 Link URL <span style="text-transform:none;color:rgba(255,255,255,.3)">(optional)</span></label>
+        <input id="ha-link" type="url" placeholder="https://twitter.com / viber://..."
+          style="width:100%;background:var(--bg-card);border:1px solid var(--border-p);border-radius:8px;color:var(--text-primary);font-size:11px;padding:8px 10px;font-family:inherit;outline:none">
+      </div>
+
+      <div style="margin-bottom:12px">
+        <label style="font-size:9px;font-weight:700;color:var(--text-dim);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em">Sort Order</label>
+        <input id="ha-sort" type="number" value="0" min="0" max="99"
+          style="width:80px;background:var(--bg-card);border:1px solid var(--border-p);border-radius:8px;color:var(--text-primary);font-size:11px;padding:8px 10px;font-family:inherit;outline:none">
+      </div>
+
+      <p id="ha-form-msg" style="font-size:11px;text-align:center;min-height:16px;margin-bottom:8px"></p>
+      <div style="display:flex;gap:8px">
+        <button onclick="_closeHaForm()" class="compact-btn btn-ghost flex-1" style="padding:11px">မလုပ်တော့</button>
+        <button id="ha-save-btn" onclick="haSave()" class="compact-btn btn-primary" style="flex:2;padding:11px;font-size:12px">
+          <i class="fa-solid fa-floppy-disk mr-2"></i>သိမ်းဆည်း
+        </button>
+      </div>
+    </div>
+
+    <!-- List -->
+    <div id="ha-list">
+      <div class="skeleton h-16 rounded-xl mb-2"></div>
+      <div class="skeleton h-16 rounded-xl mb-2"></div>
+      <div class="skeleton h-16 rounded-xl"></div>
+    </div>
+
+    <!-- Info box -->
+    <div class="card space-y-2" style="border:1px solid rgba(245,197,24,.15)">
+      <p class="section-title">အသုံးပြုနည်း</p>
+      <div style="font-size:10px;color:var(--text-dim);line-height:1.8">
+        <div style="padding:6px 10px;background:rgba(245,197,24,.08);border-radius:8px;margin-bottom:6px;border:1px solid rgba(245,197,24,.15)">
+          <i class="fa-solid fa-circle-info mr-1" style="color:var(--gold)"></i>
+          ImageKit မှ image URL copy ယူပြီး paste ပါ
+        </div>
+        <div style="padding:6px 10px;background:rgba(245,197,24,.08);border-radius:8px;border:1px solid rgba(245,197,24,.15)">
+          <i class="fa-solid fa-circle-check mr-1" style="color:var(--green)"></i>
+          သိမ်းပြီးသည်နှင့် Home Page မှာ ချက်ချင်း ပြသမည်
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 <!-- ═══════════ PASSWORD CHANGE MODAL ════════════════════ -->
 <div id="pw-change-modal" style="display:none;position:fixed;inset:0;z-index:80;background:rgba(0,0,0,0.95);align-items:center;justify-content:center;backdrop-filter:blur(12px)">
   <div style="background:var(--bg-card);border:1px solid var(--border-p);border-radius:16px;padding:28px 20px;width:calc(100% - 32px);max-width:340px;box-shadow:0 0 60px rgba(157,78,221,0.3)">
@@ -766,6 +876,7 @@
 <script src="js/wheel.js"></script>
 <script src="js/affiliate.js"></script>
 <script src="js/cs.js"></script>
+<script src="js/home_page_assets.js"></script>
 
 <script>
 // ── 3-click diamond logo → password change ───────────────
@@ -823,6 +934,7 @@ document.addEventListener('keydown', e => {
     closeBannerPanel();
     closeGamesPanel();
     closeCSPanel();
+    closeHomeAssetsPanel();
     if (document.getElementById('edit-game-modal')?.style.display !== 'none') closeEditGameModal();
   }
 });
