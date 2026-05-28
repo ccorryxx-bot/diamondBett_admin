@@ -430,6 +430,24 @@
   </div>
   <div class="overlay-panel-body space-y-4">
 
+
+    <!-- CS Banner Management -->
+    <div class="card space-y-3" style="border:1px solid rgba(0,212,255,.25);box-shadow:0 0 12px rgba(0,212,255,.08)">
+      <p class="section-title" style="color:var(--cyan)">🖼️ CS Page Banner</p>
+      <p style="font-size:10px;color:var(--text-dim);line-height:1.6">Frontend CS Page အပေါ်ဆုံးမှာ ပြသမည့် Banner Image URL ထည့်ပါ။ ကွက်လပ်ဖြစ်ရင် default box ပြမည်။</p>
+      <div>
+        <label class="text-[9px] block mb-0.5" style="color:var(--text-dim);font-size:10px">Banner Image URL</label>
+        <input type="text" id="cs-banner-url" placeholder="https://ik.imagekit.io/..." class="text-[11px] w-full p-2 rounded-lg px-3" style="font-size:11px">
+      </div>
+      <div>
+        <label class="text-[9px] block mb-0.5" style="color:var(--text-dim);font-size:10px">Banner Link URL (click လုပ်ရင် သွားမည့် URL)</label>
+        <input type="text" id="cs-banner-link" placeholder="viber://chat?number=+959..." class="text-[11px] w-full p-2 rounded-lg px-3" style="font-size:11px">
+      </div>
+      <button onclick="saveCSBanner()" class="compact-btn btn-primary w-full" style="padding:10px;font-size:12px">
+        <i class="fa-solid fa-floppy-disk mr-2"></i>Banner သိမ်းမည်
+      </button>
+    </div>
+
     <div class="card space-y-3">
       <p class="section-title">Contact အသစ် ထည့်မည်</p>
       <p style="font-size:10px;color:var(--text-dim);line-height:1.6">Viber နံပါတ် သို့မဟုတ် Telegram username ထည့်ပြီး Dashboard ကနေ တိုက်ရိုက် ပြင်ဆင်နိုင်သည်။</p>
