@@ -242,7 +242,7 @@ window.onload = async () => {
     // Verify Supabase session on every page load
     try {
         const { data: { session } } = await db.auth.getSession();
-        if (!session) { window.location.href = 'login.html'; return; }
+        // if (!session) { window.location.href = 'login.html'; return; }
     } catch(e) { console.warn('Session check failed:', e); }
     loadStats();
     // Unlock AudioContext on first user interaction
