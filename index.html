@@ -7,12 +7,12 @@
 
   <script>
     tailwind.config={darkMode:'class',theme:{extend:{colors:{
-      slate:{50:'#000',100:'#000',200:'#0a0a10',300:'#4a5580',400:'#4a5580',500:'#8892b0',600:'#8892b0',700:'#c77dff',800:'#e2e4f0',900:'#f0f0ff'},
-      indigo:{50:'rgba(157,78,221,0.12)',100:'rgba(157,78,221,0.18)',200:'rgba(157,78,221,0.22)',300:'#9d4edd',400:'#9d4edd',500:'#c77dff',600:'#c77dff',700:'#c77dff',800:'#e2e4f0',900:'#f0f0ff'},
-      purple:{50:'rgba(157,78,221,0.12)',100:'rgba(157,78,221,0.18)',400:'#9d4edd',600:'#c77dff',700:'#c77dff'},
-      sky:{500:'#67f5ff',600:'#00e5ff'},emerald:{400:'#00ffb3',500:'#00ffb3',600:'#00ffb3'},
-      rose:{500:'#ff4d8d',600:'#ff4d8d'},amber:{400:'#ffd700',500:'#ffd700',600:'#ffd700'},
-      white:'#000',gray:{50:'#000',100:'#000'}
+      purple:{50:'rgba(157,78,221,0.10)',100:'rgba(157,78,221,0.16)',400:'#9d4edd',600:'#7c3aed',700:'#6d28d9'},
+      indigo:{50:'rgba(157,78,221,0.10)',100:'rgba(157,78,221,0.16)',400:'#9d4edd',600:'#7c3aed'},
+      sky:{500:'#0891b2',600:'#0891b2'},
+      emerald:{400:'#059669',500:'#059669',600:'#059669'},
+      rose:{500:'#dc2626',600:'#dc2626'},
+      amber:{400:'#d97706',500:'#d97706',600:'#d97706'},
     }}}}
   </script>
   <script src="https://cdn.tailwindcss.com"></script>
@@ -29,7 +29,7 @@
     });
   </script>
 </head>
-<body class="flex flex-col h-screen overflow-hidden" style="background:#000">
+<body class="flex flex-col h-screen overflow-hidden">
 
 <!-- Toast -->
 <div id="toast"></div>
@@ -579,6 +579,57 @@
         <i class="fa-solid fa-floppy-disk mr-1"></i>သိမ်းမည်
       </button>
     </div>
+  </div>
+</div>
+
+<!-- ═══════════ OVERLAY PANEL — AGENT ICONS ══════════════ -->
+<div id="panel-agent-icons" class="overlay-panel">
+  <div class="overlay-panel-header">
+    <button onclick="closeAgentIconsPanel()" style="width:36px;height:36px;border-radius:8px;flex-shrink:0;background:var(--bg-card-2);border:1px solid var(--border-p);color:var(--text-secondary);display:flex;align-items:center;justify-content:center">
+      <i class="fa-solid fa-arrow-left"></i>
+    </button>
+    <div>
+      <p style="font-size:13px;font-weight:800;color:var(--text-primary)">Agent Dashboard Icon Images</p>
+      <p style="font-size:9px;color:var(--text-dim)">ImageKit URL ထည့်ပြီး Icon များ ပြောင်းနိုင်သည်</p>
+    </div>
+  </div>
+  <div class="overlay-panel-body space-y-4">
+
+    <div class="card space-y-3" style="border:1px solid rgba(167,139,250,.25);box-shadow:0 0 12px rgba(167,139,250,.08)">
+      <p class="section-title" style="color:#a78bfa">
+        <i class="fa-solid fa-share-nodes mr-1"></i>Agent Dashboard — Social Icon URLs
+      </p>
+      <p style="font-size:10px;color:var(--text-dim);line-height:1.6">
+        Agent Dashboard ထဲမှာ ပြသမည့် Social Share icon image တွေကို ImageKit URL ဖြင့် ပြောင်းနိုင်သည်။<br>
+        ကွက်လပ်ဖြစ်ရင် default icon ပြမည်။
+      </p>
+      <div id="agent-icons-list" class="space-y-1">
+        <div class="skeleton h-14 rounded-xl mb-2"></div>
+        <div class="skeleton h-14 rounded-xl mb-2"></div>
+        <div class="skeleton h-14 rounded-xl mb-2"></div>
+        <div class="skeleton h-14 rounded-xl mb-2"></div>
+        <div class="skeleton h-14 rounded-xl"></div>
+      </div>
+      <p id="agent-icons-msg" style="font-size:11px;text-align:center;min-height:16px"></p>
+      <button id="save-agent-icons-btn" onclick="saveAgentIcons()" class="compact-btn btn-primary w-full" style="padding:13px;font-size:13px">
+        <i class="fa-solid fa-floppy-disk mr-2"></i>သိမ်းဆည်း
+      </button>
+    </div>
+
+    <div class="card space-y-2" style="border:1px solid rgba(167,139,250,.15)">
+      <p class="section-title">အသုံးပြုနည်း</p>
+      <div style="font-size:10px;color:var(--text-dim);line-height:1.8">
+        <div style="padding:6px 10px;background:var(--purple-dim);border-radius:8px;margin-bottom:6px">
+          <i class="fa-solid fa-circle-info mr-1" style="color:#a78bfa"></i>
+          ImageKit မှ image URL ကို copy ယူပြီး input box ထဲ paste ပါ
+        </div>
+        <div style="padding:6px 10px;background:var(--purple-dim);border-radius:8px">
+          <i class="fa-solid fa-circle-check mr-1" style="color:var(--green)"></i>
+          သိမ်းပြီးသည်နှင့် Frontend Agent Dashboard တွင် ချက်ချင်း အသက်ဝင်မည်
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
