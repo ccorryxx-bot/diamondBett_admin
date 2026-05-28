@@ -679,7 +679,7 @@ function changeAdminPassword() {
 async function adminLogout() {
   if (!confirm('ထွက်မှာ သေချာပါသလား?')) return;
   try { if(typeof db!=='undefined') await db.auth.signOut(); } catch(e){}
-  window.location.href = 'login.html';
+  window.location.reload();
 }
 
 // ── Keyboard shortcuts ─────────────────────────────────
