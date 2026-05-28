@@ -104,6 +104,11 @@
       <span>Game Cards စီမံမှု</span>
       <i class="fa-solid fa-chevron-right ml-auto" style="font-size:10px;color:var(--text-dim)"></i>
     </div>
+    <div class="sidebar-link" onclick="openCSPanel();closeSidebar()">
+      <i class="fa-solid fa-headset" style="color:#f5c518"></i>
+      <span>CS ဝန်ဆောင်မှု စီမံမှု</span>
+      <i class="fa-solid fa-chevron-right ml-auto" style="font-size:10px;color:var(--text-dim)"></i>
+    </div>
   </div>
 
   <!-- Recent Activity -->
@@ -412,6 +417,40 @@
   </div>
 </div>
 
+<!-- ═══════════ OVERLAY PANEL — CS CONTACTS ══════════════ -->
+<div id="panel-cs" class="overlay-panel">
+  <div class="overlay-panel-header">
+    <button onclick="closeCSPanel()" style="width:36px;height:36px;border-radius:8px;flex-shrink:0;background:var(--bg-card-2);border:1px solid var(--border-p);color:var(--text-secondary);display:flex;align-items:center;justify-content:center">
+      <i class="fa-solid fa-arrow-left"></i>
+    </button>
+    <div>
+      <p style="font-size:13px;font-weight:800;color:var(--text-primary)">CS ဝန်ဆောင်မှု စီမံမှု</p>
+      <p style="font-size:9px;color:var(--text-dim)"><span id="cs-count">-</span> contacts</p>
+    </div>
+  </div>
+  <div class="overlay-panel-body space-y-4">
+
+    <div class="card space-y-3">
+      <p class="section-title">Contact အသစ် ထည့်မည်</p>
+      <p style="font-size:10px;color:var(--text-dim);line-height:1.6">Viber နံပါတ် သို့မဟုတ် Telegram username ထည့်ပြီး Dashboard ကနေ တိုက်ရိုက် ပြင်ဆင်နိုင်သည်။</p>
+      <button onclick="showAddCSForm()" class="compact-btn btn-primary w-full" style="padding:12px;font-size:13px">
+        <i class="fa-solid fa-plus mr-2"></i>Contact အသစ် ထည့်မည်
+      </button>
+    </div>
+
+    <div class="card">
+      <p class="section-title mb-3">ရှိပြီးသား Contacts</p>
+      <div id="cs-contact-list" class="space-y-3">
+        <div class="skeleton h-24 rounded-xl"></div>
+        <div class="skeleton h-24 rounded-xl"></div>
+        <div class="skeleton h-24 rounded-xl"></div>
+        <div class="skeleton h-24 rounded-xl"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 <!-- ═══════════ OVERLAY PANEL — GAMES ═════════════════════ -->
 <div id="panel-games" class="overlay-panel">
   <div class="overlay-panel-header">
@@ -574,6 +613,7 @@
 <script src="js/games.js"></script>
 <script src="js/wheel.js"></script>
 <script src="js/affiliate.js"></script>
+<script src="js/cs.js"></script>
 
 <script>
 // ── 3-click diamond logo → password change ───────────────
@@ -630,6 +670,7 @@ document.addEventListener('keydown', e => {
     closePwModal();
     closeBannerPanel();
     closeGamesPanel();
+    closeCSPanel();
     if (document.getElementById('edit-game-modal')?.style.display !== 'none') closeEditGameModal();
   }
 });
