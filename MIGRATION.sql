@@ -116,3 +116,33 @@ UPDATE users u SET
     WHERE t.user_id = u.id AND t.type = 'withdrawal' AND t.status = 'approved'), 0);
 
 SELECT 'Migration v3 complete ✅' AS status;
+
+-- ── STEP 9: cs_contacts table (v4) ──────────────────────────
+-- CS Contact Management — ဝန်ဆောင်မှုအဖွဲ့ ဆက်သွယ်ရေး
+CREATE TABLE IF NOT EXISTS public.cs_contacts (
+  id            UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
+  platform      TEXT        NOT NULL CHECK (platform IN ('viber','telegram','facebook','line','zalo')),
+  name          TEXT        NOT NULL,
+  display_label TEXT        NOT NULL,
+  contact_url   TEXT        NOT NULL,
+  hours         TEXT        DEFAULT '00:00 - 23:59',
+  is_active     BOOLEAN     DEFAULT true,
+  sort_order    INTEGER     DEFAULT 0,
+  created_at    TIMESTAMPTZ DEFAULT NOW(),
+  updated_at    TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- RLS: Anyone can read (frontend CS page), authenticated can write (admin panel)
+ALTER TABLE public.cs_contacts ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "cs_contacts_public_read" ON public.cs_contacts;
+CREATE POLICY "cs_contacts_public_read"
+  ON public.cs_contacts FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "cs_contacts_admin_write" ON public.cs_contacts;
+CREATE POLICY "cs_contacts_admin_write"
+  ON public.cs_contacts FOR ALL
+  USING (auth.role() IN ('service_role','authenticated'))
+  WITH CHECK (auth.role() IN ('service_role','authenticated'));
+
+SELECT 'Migration v4 — cs_contacts table ✅' AS status;
