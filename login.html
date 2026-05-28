@@ -290,7 +290,7 @@ async function doLogin(btn) {
   if (loginBtn) { loginBtn.disabled = true; loginBtn.style.opacity = '0.6'; }
 
   try {
-    if (typeof db === 'undefined') throw new Error('DB not loaded');
+    const db = window.db; if (!db) throw new Error("DB not loaded");
 
     const { data, error } = await db.auth.signInWithPassword({ email, password: pw });
     if (error) throw error;
