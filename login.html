@@ -287,22 +287,28 @@ async function doLogin(btn) {
   if (loginBtn) { loginBtn.disabled = true; loginBtn.style.opacity = '0.6'; }
 
   try {
-    if (typeof db === 'undefined' || !db) throw new Error("DB not loaded");
+    // Get db — use window.db (set by config.js), or create a fresh client as fallback
+    let authDb = window.db;
+    if (!authDb && typeof supabase !== 'undefined' && typeof SUPABASE_URL !== 'undefined') {
+      authDb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      window.db = authDb;
+    }
+    if (!authDb) throw new Error("DB not ready — please refresh");
 
-    const { data, error } = await db.auth.signInWithPassword({ email, password: pw });
+    const { data, error } = await authDb.auth.signInWithPassword({ email, password: pw });
     if (error) throw error;
 
     // Verify is_admin flag
-    const { data: uRow, error: uErr } = await db
+    const { data: uRow, error: uErr } = await authDb
       .from('users').select('is_admin').eq('id', data.user.id).single();
     if (uErr || !uRow?.is_admin) {
-      await db.auth.signOut();
+      await authDb.auth.signOut();
       throw new Error('Admin access only');
     }
 
     orbState = 'success';
     setStatus('◈ ACCESS GRANTED', 'ok');
-    if (btn) addRipple(btn, event);
+    if (btn) addRipple(btn, window.event || {});
     setTimeout(() => { window.location.href = 'index.html'; }, 900);
 
   } catch(e) {
