@@ -1,7 +1,6 @@
 // ═══════════════════════════════════════════════════════
-//  GAMES  —  Supabase Storage upload + provider_url + CRUD
+//  GAMES  —  ImageKit CDN upload + provider_url + CRUD
 // ═══════════════════════════════════════════════════════
-const GAME_BUCKET = 'game-cards';
 
 let allGameCards  = [];
 let gameCatFilter = 'all';
@@ -75,7 +74,7 @@ function renderGameCards(cards) {
         </div>`).join('')}</div>`;
 }
 
-// ── File Upload ────────────────────────────────────────
+// ── File Upload ──────────────────────────────────────────
 let gameFileToUpload = null;
 
 function onGameFileChange(input) {
@@ -101,17 +100,11 @@ async function addGameCard() {
     if (btn) { btn.disabled = true; btn.textContent = 'တင်နေသည်...'; }
 
     try {
-        // Upload image to Supabase Storage
-        const ext      = gameFileToUpload.name.split('.').pop();
-        const fileName = `game_${Date.now()}.${ext}`;
-        const { data: upData, error: upErr } = await db.storage
-            .from(GAME_BUCKET).upload(fileName, gameFileToUpload, { cacheControl: '3600', upsert: false });
-        if (upErr) throw upErr;
-
-        const { data: urlData } = db.storage.from(GAME_BUCKET).getPublicUrl(fileName);
+        // Upload image to ImageKit CDN
+        const imageUrl = await uploadToImageKit(gameFileToUpload, 'game-cards');
 
         const { error } = await db.from('game_cards').insert({
-            game_name: name, image_url: urlData.publicUrl,
+            game_name: name, image_url: imageUrl,
             category: cat, game_code: code, provider_url: provUrl,
             created_at: new Date().toISOString()
         });
@@ -137,7 +130,7 @@ async function addGameCard() {
     }
 }
 
-// ── Edit Modal ────────────────────────────────────────
+// ── Edit Modal ───────────────────────────────────────────
 let editingGameId = null;
 
 function openEditGameModal(id) {
@@ -182,15 +175,9 @@ async function saveEditGame() {
     try {
         let imageUrl = allGameCards.find(c=>String(c.id)===String(editingGameId))?.image_url || '';
 
-        // Upload new image if selected
+        // Upload new image to ImageKit if selected
         if (editGameFile) {
-            const ext      = editGameFile.name.split('.').pop();
-            const fileName = `game_${Date.now()}.${ext}`;
-            const { error: upErr } = await db.storage.from(GAME_BUCKET)
-                .upload(fileName, editGameFile, { cacheControl:'3600', upsert:false });
-            if (upErr) throw upErr;
-            const { data: urlData } = db.storage.from(GAME_BUCKET).getPublicUrl(fileName);
-            imageUrl = urlData.publicUrl;
+            imageUrl     = await uploadToImageKit(editGameFile, 'game-cards');
             editGameFile = null;
         }
 
@@ -220,7 +207,7 @@ async function deleteGameCard(id, name) {
     } catch(e) { showToast('မအောင်မြင်ပါ: ' + e.message, 'error'); }
 }
 
-// ── Panel open/close ────────────────────────────────────
+// ── Panel open/close ─────────────────────────────────────
 function openGamesPanel() {
     closeSidebar();
     const p = document.getElementById('panel-games');
