@@ -113,8 +113,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js" defer></script>
 <script>
 // ── CONFIG ─────────────────────────────────────────────────────────
-let attempts = 0;
-let locked   = false;
 
 // ── BG PARTICLE CANVAS ─────────────────────────────────────────────
 const bgCvs = document.getElementById('bg');
@@ -271,7 +269,6 @@ function setStatus(msg, type) {
 }
 
 async function doLogin(btn) {
-  if (locked) return;
   const email = document.getElementById('email-input')?.value?.trim() || '';
   const pw    = document.getElementById('pw-input').value;
 
@@ -309,12 +306,8 @@ async function doLogin(btn) {
     setTimeout(() => { window.location.href = 'index.html'; }, 900);
 
   } catch(e) {
-    attempts++;
     orbState = 'error';
-    const msg = e.message || 'Invalid credentials';
-    const triesLeft = Math.max(0, 5 - attempts);
-    const hint = attempts >= 3 ? ' (' + triesLeft + ' tries left)' : '';
-    setStatus('◈ ACCESS DENIED — ' + msg + hint, 'err');
+    const msg = e.message || 'Invalid credentials';    setStatus('◈ ACCESS DENIED — ' + msg, 'err');
     const field = document.getElementById('pw-field');
     field.classList.add('shake');
     setTimeout(() => field.classList.remove('shake'), 300);
@@ -323,19 +316,7 @@ async function doLogin(btn) {
       document.getElementById('pw-input').value = '';
     }
     if (loginBtn) { loginBtn.disabled = false; loginBtn.style.opacity = '1'; }
-
-    if (attempts >= 5) {
-      locked = true;
-      loginBtn.disabled = true; loginBtn.style.opacity = '0.4';
-      setStatus('◈ LOCKED — 30s COOLDOWN', 'err');
-      setTimeout(() => {
-        locked = false; attempts = 0;
-        loginBtn.disabled = false; loginBtn.style.opacity = '1';
-        orbState = 'idle';
-        setStatus('◈ AWAITING AUTHENTICATION', 'idle');
-      }, 30000);
-    }
-    setTimeout(() => { if (!locked) orbState = 'idle'; }, 1500);
+    setTimeout(() => { orbState = 'idle'; }, 1500);
   }
 }
 
