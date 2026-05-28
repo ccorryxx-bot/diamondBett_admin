@@ -69,10 +69,10 @@ function renderCSList(contacts) {
                 </div>
             </div>
             <div class="flex gap-2">
-                <button onclick="updateCSContact(${id})" class="compact-btn btn-success flex-1 py-1.5 text-[10px]">
+                <button onclick="updateCSContact('${id}')" class="compact-btn btn-success flex-1 py-1.5 text-[10px]">
                     <i class="fa-solid fa-floppy-disk mr-1"></i>သိမ်းမည်
                 </button>
-                <button onclick="deleteCSContact(${id},'${c.name.replace(/'/g,"\\'")}')" class="compact-btn btn-danger px-3 py-1.5 text-[10px]">
+                <button onclick="deleteCSContact('${id}','${c.name.replace(/'/g,"\\'")}')" class="compact-btn btn-danger px-3 py-1.5 text-[10px]">
                     <i class="fa-solid fa-trash"></i>
                 </button>
             </div>
@@ -173,9 +173,34 @@ async function createCSContact() {
     } catch(e) { showToast('မအောင်မြင်ပါ: ' + e.message, 'error'); }
 }
 
+
+// ── CS Banner Management ──────────────────────────────────
+async function loadCSBanner() {
+    try {
+        const { data } = await db.from('site_settings').select('cs_banner_url,cs_banner_link').single();
+        if (data) {
+            const u = document.getElementById('cs-banner-url');
+            const l = document.getElementById('cs-banner-link');
+            if (u) u.value = data.cs_banner_url || '';
+            if (l) l.value = data.cs_banner_link || '';
+        }
+    } catch(e) { console.error('loadCSBanner:', e); }
+}
+
+async function saveCSBanner() {
+    const url  = document.getElementById('cs-banner-url')?.value?.trim() || '';
+    const link = document.getElementById('cs-banner-link')?.value?.trim() || '';
+    try {
+        const { error } = await db.from('site_settings').update({ cs_banner_url: url, cs_banner_link: link }).neq('id', 0);
+        if (error) throw error;
+        showToast('CS Banner သိမ်းပြီ ✅', 'success');
+    } catch(e) { showToast('မသိမ်းနိုင်: ' + e.message, 'error'); }
+}
+
 function openCSPanel() {
     document.getElementById('panel-cs').classList.add('open');
     loadCSContacts();
+    loadCSBanner();
 }
 function closeCSPanel() {
     document.getElementById('panel-cs').classList.remove('open');
