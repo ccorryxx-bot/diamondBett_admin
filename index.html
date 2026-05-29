@@ -119,6 +119,12 @@
       <span>Home Page icons &amp; license logo</span>
       <i class="fa-solid fa-chevron-right ml-auto" style="font-size:10px;color:var(--text-dim)"></i>
     </div>
+    <div class="sidebar-link" onclick="openSuggestionsPanel();closeSidebar()" style="margin-top:4px">
+      <i class="fa-solid fa-lightbulb" style="color:#fbbf24"></i>
+      <span>User Suggestions</span>
+      <span id="suggestions-badge" style="display:none;background:var(--red);color:#fff;font-size:9px;font-weight:800;border-radius:10px;padding:1px 6px;margin-left:4px">0</span>
+      <i class="fa-solid fa-chevron-right ml-auto" style="font-size:10px;color:var(--text-dim)"></i>
+    </div>
   </div>
 
   <!-- Recent Activity -->
@@ -1017,6 +1023,35 @@
   </div>
 </div>
 
+<!-- ═══════════ OVERLAY PANEL — SUGGESTIONS ════════════ -->
+<div id="panel-suggestions" class="overlay-panel">
+  <div class="overlay-panel-header">
+    <button onclick="closeSuggestionsPanel()" style="width:36px;height:36px;border-radius:8px;flex-shrink:0;background:var(--bg-card-2);border:1px solid var(--border-p);color:var(--text-secondary);display:flex;align-items:center;justify-content:center">
+      <i class="fa-solid fa-arrow-left"></i>
+    </button>
+    <div>
+      <p style="font-size:13px;font-weight:800;color:var(--text-primary)">User Suggestions</p>
+      <p style="font-size:9px;color:var(--text-dim)"><span id="suggestions-count">-</span></p>
+    </div>
+    <button onclick="deleteAllSuggestions()" style="margin-left:auto;padding:6px 10px;border-radius:8px;background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.25);color:var(--red);font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">
+      <i class="fa-solid fa-trash mr-1"></i>အားလုံး ဖျက်
+    </button>
+  </div>
+  <div class="overlay-panel-body space-y-3">
+    <div class="card" style="background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.2)">
+      <div class="flex items-center gap-2">
+        <i class="fa-solid fa-circle-info" style="color:#fbbf24"></i>
+        <p style="font-size:11px;color:var(--text-dim);line-height:1.6">Frontend မှ ကစားသမားများ တင်သွင်းသော Suggestions များ ဖြစ်သည်</p>
+      </div>
+    </div>
+    <div id="suggestions-list" class="space-y-2">
+      <div class="skeleton h-20 rounded-xl"></div>
+      <div class="skeleton h-20 rounded-xl"></div>
+      <div class="skeleton h-20 rounded-xl"></div>
+    </div>
+  </div>
+</div>
+
 <!-- ═══════════ PASSWORD CHANGE MODAL ════════════════════ -->
 <div id="pw-change-modal" style="display:none;position:fixed;inset:0;z-index:80;background:rgba(0,0,0,0.95);align-items:center;justify-content:center;backdrop-filter:blur(12px)">
   <div style="background:var(--bg-card);border:1px solid var(--border-p);border-radius:16px;padding:28px 20px;width:calc(100% - 32px);max-width:340px;box-shadow:0 0 60px rgba(157,78,221,0.3)">
@@ -1068,6 +1103,7 @@
 <script src="js/affiliate.js"></script>
 <script src="js/cs.js"></script>
 <script src="js/home_page_assets.js"></script>
+<script src="js/suggestions.js"></script>
 
 <script>
 // ── 3-click diamond logo → password change ───────────────
@@ -1126,6 +1162,7 @@ document.addEventListener('keydown', e => {
     closeGamesPanel();
     closeCSPanel();
     closeHomeAssetsPanel();
+    closeSuggestionsPanel();
     if (document.getElementById('edit-game-modal')?.style.display !== 'none') closeEditGameModal();
   }
 });
