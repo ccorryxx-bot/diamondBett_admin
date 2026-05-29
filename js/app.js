@@ -23,6 +23,7 @@ function refreshData(tab) {
         tab = visible ? visible.id.replace('tab-', '') : 'overview';
     }
     if (tab === 'overview')     loadStats();
+    loadAdminInfo();
     if (tab === 'users')        loadUsers();
     if (tab === 'finance')      loadFinance();
     if (tab === 'agents')       loadAgents();
@@ -277,11 +278,35 @@ function _scheduleRealtimeReconnect() {
     }, delay);
 }
 
+
+// ===== ADMIN LOGOUT =====
+async function adminLogout() {
+    try {
+        await db.auth.signOut();
+    } catch(e) {}
+    window.location.href = 'login.html';
+}
+
+// ===== SHOW ADMIN INFO IN SIDEBAR =====
+async function loadAdminInfo() {
+    try {
+        const { data: { session } } = await db.auth.getSession();
+        if (!session) return;
+        const { data: u } = await db.from('users')
+            .select('fullname, phone')
+            .eq('id', session.user.id)
+            .single();
+        const name = u ? (u.fullname || u.phone || session.user.email) : session.user.email;
+        const el = document.getElementById('sidebar-admin-name');
+        if (el) el.textContent = name;
+    } catch(e) {}
+}
+
 // ===== INIT =====
 window.onload = async () => {
     try {
         const { data: { session } } = await db.auth.getSession();
-        // if (!session) { window.location.href = 'login.html'; return; }
+        if (!session) { window.location.href = 'login.html'; return; }
     } catch(e) { console.warn('Session check failed:', e); }
 
     loadStats();
