@@ -22,14 +22,15 @@ function refreshData(tab) {
         const visible = document.querySelector('.tab-content:not(.hidden)');
         tab = visible ? visible.id.replace('tab-', '') : 'overview';
     }
-    if (tab === 'overview') loadStats();
-    if (tab === 'users') loadUsers();
-    if (tab === 'finance') loadFinance();
-    if (tab === 'agents') loadAgents();
-    if (tab === 'settings') { loadSettings(); loadAffiliate(); }
-      if (tab === 'banners')  loadBanners();
-      if (tab === 'games')    loadGames();
-      if (tab === 'wheel')    loadWheel();
+    if (tab === 'overview')     loadStats();
+    if (tab === 'users')        loadUsers();
+    if (tab === 'finance')      loadFinance();
+    if (tab === 'agents')       loadAgents();
+    if (tab === 'settings')     { loadSettings(); loadAffiliate(); }
+    if (tab === 'banners')      loadBanners();
+    if (tab === 'games')        loadGames();
+    if (tab === 'wheel')        loadWheel();
+    if (tab === 'suggestions')  loadSuggestions();
 }
 
 // ===== SIDEBAR =====
@@ -65,9 +66,9 @@ async function loadSidebarData() {
         });
 
         const roleColors = {
-            admin: { bg: 'bg-purple-50', text: 'text-purple-600', icon: 'fa-shield-halved', label: 'Admin' },
-            agent: { bg: 'bg-blue-50',   text: 'text-blue-600',   icon: 'fa-user-tie',      label: 'Agent' },
-            player:{ bg: 'bg-slate-50',  text: 'text-slate-600',  icon: 'fa-gamepad',        label: 'ကစားသမား' }
+            admin:  { bg: 'bg-purple-50', text: 'text-purple-600', icon: 'fa-shield-halved', label: 'Admin' },
+            agent:  { bg: 'bg-blue-50',   text: 'text-blue-600',   icon: 'fa-user-tie',      label: 'Agent' },
+            player: { bg: 'bg-slate-50',  text: 'text-slate-600',  icon: 'fa-gamepad',        label: 'ကစားသမား' }
         };
 
         document.getElementById('sidebar-roles').innerHTML = Object.entries(roles).map(([role, count]) => {
@@ -122,8 +123,6 @@ function playNotificationSound(type) {
         const gain = ctx.createGain();
         gain.connect(ctx.destination);
 
-        // deposit → rising two-tone chime (ငွေသွင်း → ဝမ်းသာဖွယ် သံ)
-        // withdrawal → descending alert tone (ငွေထုတ် → သတိပေး သံ)
         const notes = type === 'deposit'
             ? [{ freq: 880, t: 0 }, { freq: 1100, t: 0.12 }, { freq: 1320, t: 0.24 }]
             : [{ freq: 660, t: 0 }, { freq: 550, t: 0.14 }, { freq: 440, t: 0.28 }];
@@ -160,7 +159,6 @@ async function pollPendingRequests() {
 
         if (_lastPendingCount !== null && c > _lastPendingCount) {
             const diff = c - _lastPendingCount;
-            // Determine type of latest pending tx for sound choice
             const { data: latest } = await db.from('transactions')
                 .select('type').eq('status','pending').order('created_at',{ascending:false}).limit(1).single();
             const txType = latest?.type || 'deposit';
@@ -177,7 +175,6 @@ async function pollPendingRequests() {
 function updateFinanceBadge(count) {
     const btn = document.getElementById('btn-finance');
     if (!btn) return;
-    // Remove old badge
     const old = btn.querySelector('.notif-badge');
     if (old) old.remove();
     if (count > 0) {
@@ -187,72 +184,112 @@ function updateFinanceBadge(count) {
 }
 
 function startPolling() {
-    pollPendingRequests();                   // immediate first check
-    // If Realtime is active, we can poll less frequently (every 60s) as a fallback
+    pollPendingRequests();
     if (_pollTimer) clearInterval(_pollTimer);
-    _pollTimer = setInterval(pollPendingRequests, 60000); 
+    _pollTimer = setInterval(pollPendingRequests, 60000);
 }
 
 // ===== REALTIME SUBSCRIPTIONS =====
+let _realtimeChannels = [];
+let _realtimeRetryTimer = null;
+let _realtimeRetryCount = 0;
+
+function _cleanupChannels() {
+    _realtimeChannels.forEach(ch => {
+        try { db.removeChannel(ch); } catch(e) {}
+    });
+    _realtimeChannels = [];
+}
+
 function setupRealtimeSubscriptions() {
-    // Listen for transaction changes (deposits/withdrawals)
-    db.channel('public:transactions')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, payload => {
-        console.log('Realtime Transaction Update:', payload);
-        // Refresh sidebar and stats for any transaction change
-        loadSidebarData();
-        loadStats();
-        
-        // If we're on the finance tab, refresh it too
-        const financeTab = document.getElementById('tab-finance');
-        if (financeTab && !financeTab.classList.contains('hidden')) {
-            loadFinance();
-        }
+    _cleanupChannels();
 
-        // Handle new pending requests for notification sound/toast
-        if (payload.eventType === 'INSERT' && payload.new.status === 'pending') {
-            playNotificationSound(payload.new.type || 'deposit');
-            showToast(
-                `⚡ တောင်းဆိုမှုအသစ်ရောက်သည်! (${payload.new.type === 'deposit' ? 'ငွေသွင်း' : 'ငွေထုတ်'})`,
-                'success'
-            );
-        }
-      })
-      .subscribe();
+    // ── Transactions channel ──────────────────────────────
+    const txChannel = db.channel('admin-transactions-' + Date.now())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, payload => {
+            loadSidebarData();
+            loadStats();
 
-    // Listen for user changes (balance updates/new users)
-    db.channel('public:users')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, payload => {
-        console.log('Realtime User Update:', payload);
-        loadStats(); // Update dashboard counts
-        
-        // Refresh users tab if visible
-        const usersTab = document.getElementById('tab-users');
-        if (usersTab && !usersTab.classList.contains('hidden')) {
-            loadUsers();
-        }
-      })
-      .subscribe();
-      
-    console.log('Supabase Realtime subscriptions active.');
+            const financeTab = document.getElementById('tab-finance');
+            if (financeTab && !financeTab.classList.contains('hidden')) loadFinance();
+
+            if (payload.eventType === 'INSERT' && payload.new.status === 'pending') {
+                const txType = payload.new.type || 'deposit';
+                playNotificationSound(txType);
+                showToast(
+                    `⚡ တောင်းဆိုမှုအသစ်ရောက်သည်! (${txType === 'deposit' ? 'ငွေသွင်း' : 'ငွေထုတ်'})`,
+                    'success'
+                );
+            }
+        })
+        .subscribe((status, err) => {
+            if (status === 'SUBSCRIBED') {
+                _realtimeRetryCount = 0;
+                console.log('[Realtime] transactions: connected ✓');
+            } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+                console.warn('[Realtime] transactions:', status, err);
+                _scheduleRealtimeReconnect();
+            }
+        });
+
+    // ── Users channel ─────────────────────────────────────
+    const usersChannel = db.channel('admin-users-' + Date.now())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, payload => {
+            loadStats();
+            const usersTab = document.getElementById('tab-users');
+            if (usersTab && !usersTab.classList.contains('hidden')) loadUsers();
+        })
+        .subscribe((status, err) => {
+            if (status === 'SUBSCRIBED') {
+                console.log('[Realtime] users: connected ✓');
+            } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+                console.warn('[Realtime] users:', status, err);
+                _scheduleRealtimeReconnect();
+            }
+        });
+
+    // ── Suggestions channel ───────────────────────────────
+    const sugChannel = db.channel('admin-suggestions-' + Date.now())
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'suggestions' }, payload => {
+            console.log('[Realtime] new suggestion:', payload.new);
+            if (typeof onNewSuggestion === 'function') onNewSuggestion();
+            showToast('💡 Suggestion အသစ်ရောက်သည်!', 'success');
+        })
+        .subscribe((status, err) => {
+            if (status === 'SUBSCRIBED') {
+                console.log('[Realtime] suggestions: connected ✓');
+            } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+                console.warn('[Realtime] suggestions:', status, err);
+            }
+        });
+
+    _realtimeChannels = [txChannel, usersChannel, sugChannel];
+}
+
+function _scheduleRealtimeReconnect() {
+    if (_realtimeRetryTimer) return;
+    _realtimeRetryCount++;
+    const delay = Math.min(5000 * _realtimeRetryCount, 60000);
+    console.log(`[Realtime] reconnecting in ${delay / 1000}s (attempt ${_realtimeRetryCount})...`);
+    _realtimeRetryTimer = setTimeout(() => {
+        _realtimeRetryTimer = null;
+        setupRealtimeSubscriptions();
+    }, delay);
 }
 
 // ===== INIT =====
 window.onload = async () => {
-    // Verify Supabase session on every page load
     try {
         const { data: { session } } = await db.auth.getSession();
         // if (!session) { window.location.href = 'login.html'; return; }
     } catch(e) { console.warn('Session check failed:', e); }
+
     loadStats();
-    // Unlock AudioContext on first user interaction
+
     document.addEventListener('click', () => {
         if (_audioCtx && _audioCtx.state === 'suspended') _audioCtx.resume();
     }, { once: true });
-    
-    // Start Realtime instead of just polling
+
     setupRealtimeSubscriptions();
-    
-    // We can keep polling as a fallback every 60 seconds instead of 30
     startPolling();
 };
